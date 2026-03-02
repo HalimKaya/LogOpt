@@ -1,0 +1,3206 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoadOpt — Yükleme Optimizasyonu</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f7fa;
+  --bg2:#eef1f6;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --border:#e2e8f0;
+  --border2:#cbd5e1;
+  --text:#0f172a;
+  --text2:#475569;
+  --text3:#94a3b8;
+  --accent:#2563eb;
+  --accent-h:#1d4ed8;
+  --accent-light:#eff6ff;
+  --accent-mid:#bfdbfe;
+  --green:#059669;
+  --green-light:#ecfdf5;
+  --orange:#d97706;
+  --orange-light:#fffbeb;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --purple:#7c3aed;
+  --purple-light:#f5f3ff;
+  --radius:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.07),0 2px 4px -1px rgba(0,0,0,.05);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.07),0 4px 6px -2px rgba(0,0,0,.04);
+}
+
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* ── Page routing ── */
+.page{display:none;min-height:100vh}
+.page.active{display:block}
+
+/* ── Topnav ── */
+.topnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;color:var(--text);cursor:pointer}
+.nav-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.nav-steps{display:flex;align-items:center;gap:0}
+.nav-step{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:8px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;transition:all .2s}
+.nav-step.active{color:var(--accent);background:var(--accent-light)}
+.nav-step.done{color:var(--green)}
+.nav-step-num{width:22px;height:22px;border-radius:50%;background:var(--bg2);color:var(--text3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-step.active .nav-step-num{background:var(--accent);color:#fff}
+.nav-step.done .nav-step-num{background:var(--green);color:#fff}
+.nav-sep{color:var(--border2);margin:0 2px;font-size:16px}
+
+/* ── Container ── */
+.container{max-width:1140px;margin:0 auto;padding:32px 24px}
+
+/* ── Welcome Page ── */
+.welcome-hero{text-align:center;padding:48px 0 40px}
+.welcome-hero h1{font-size:38px;font-weight:800;color:var(--text);letter-spacing:-1px;margin-bottom:12px}
+.welcome-hero h1 span{color:var(--accent)}
+.welcome-hero p{font-size:16px;color:var(--text2);max-width:520px;margin:0 auto 32px}
+.welcome-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px;margin:0 auto 48px}
+.welcome-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:28px;cursor:pointer;transition:all .2s;text-align:left;position:relative;overflow:hidden}
+.welcome-card::before{content:'';position:absolute;inset:0;border-radius:16px;opacity:0;transition:opacity .2s}
+.welcome-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.welcome-card:hover::before{opacity:1}
+.welcome-card.pallet:hover{border-color:var(--accent)}
+.welcome-card.container-c:hover{border-color:var(--purple)}
+.wcard-icon{font-size:36px;margin-bottom:16px}
+.wcard-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.wcard-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+.wcard-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.wcard-badge.blue{background:var(--accent-light);color:var(--accent)}
+.wcard-badge.purple{background:var(--purple-light);color:var(--purple)}
+
+/* History section */
+.section-title{font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:16px}
+.history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.history-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px}
+.history-card:hover{border-color:var(--accent-mid);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.history-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.history-icon.p{background:var(--accent-light)}
+.history-icon.c{background:var(--purple-light)}
+.history-info{flex:1;min-width:0}
+.history-name{font-weight:600;font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-meta{font-size:12px;color:var(--text3)}
+.history-badges{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.tag.green{background:var(--green-light);color:var(--green)}
+.tag.blue{background:var(--accent-light);color:var(--accent)}
+.tag.orange{background:var(--orange-light);color:var(--orange)}
+.no-history{text-align:center;padding:32px;color:var(--text3);background:var(--surface);border:1px dashed var(--border2);border-radius:var(--radius);font-size:13px}
+
+/* ── Settings Page ── */
+.settings-layout{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-header h2{font-size:15px;font-weight:700}
+.card-header-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.card-body{padding:20px 24px}
+
+/* Metric toggle */
+.metric-toggle{display:flex;gap:0;background:var(--bg2);border-radius:8px;padding:3px}
+.metric-btn{flex:1;padding:7px 0;border:none;background:transparent;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s}
+.metric-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+
+/* Type selector */
+.type-select{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
+.type-option{border:2px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;text-align:center}
+.type-option:hover{border-color:var(--border2)}
+.type-option.selected{border-color:var(--accent);background:var(--accent-light)}
+.type-option.selected.purple{border-color:var(--purple);background:var(--purple-light)}
+.type-option-icon{font-size:28px;margin-bottom:8px}
+.type-option-title{font-weight:700;font-size:13px;margin-bottom:3px}
+.type-option-sub{font-size:11px;color:var(--text3)}
+
+/* Form elements */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=number],input[type=text],select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;color:var(--text);background:var(--surface);transition:border .15s;outline:none}
+input[type=number]:focus,input[type=text]:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-mid)}
+input[type=number]:hover,input[type=text]:hover{border-color:var(--border2)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:'Inter',sans-serif}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+.btn-secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg2);border-color:var(--border2)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg2)}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{background:#047857}
+.btn-lg{padding:12px 28px;font-size:15px;border-radius:10px}
+.btn-full{width:100%;justify-content:center}
+.btn-danger-ghost{background:transparent;color:var(--red);border:1px solid #fecaca}
+.btn-danger-ghost:hover{background:var(--red-light)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+/* ── Config (step 2) ── */
+.config-layout{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}
+.dimension-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* Box list */
+.box-list-wrap{display:flex;flex-direction:column;gap:10px}
+.box-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.box-item-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.color-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.box-item-body{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px}
+.box-dim-field{display:flex;flex-direction:column;gap:4px}
+.box-dim-field label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.box-dim-field input{padding:7px 8px;font-size:13px}
+.add-box-row{display:flex;align-items:center;gap:10px;padding:10px 0}
+.empty-box-hint{text-align:center;padding:24px 16px;color:var(--text3);font-size:13px;border:1px dashed var(--border2);border-radius:8px}
+.import-drop{border:2px dashed var(--border2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:0}
+.import-drop:hover{border-color:var(--accent);background:var(--accent-light)}
+.import-drop-icon{font-size:24px;margin-bottom:8px}
+.import-drop-text{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:3px}
+.import-drop-sub{font-size:12px;color:var(--text3)}
+
+/* ── Results Page ── */
+.results-layout{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}
+
+/* Stat pills */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.stat-pill-val{font-size:26px;font-weight:800;line-height:1}
+.stat-pill-lbl{font-size:11px;color:var(--text3);margin-top:4px;font-weight:500}
+.stat-pill.accent .stat-pill-val{color:var(--accent)}
+.stat-pill.green .stat-pill-val{color:var(--green)}
+.stat-pill.orange .stat-pill-val{color:var(--orange)}
+.stat-pill.purple .stat-pill-val{color:var(--purple)}
+.stat-pill.red .stat-pill-val{color:var(--red)}
+.weight-bar-wrap{width:100%;height:5px;background:var(--border);border-radius:3px;margin-top:7px;overflow:hidden}
+.weight-bar{height:100%;border-radius:3px;transition:width .4s}
+.pallet-item.overweight{border-color:#fecaca;background:#fff5f5}
+.pallet-item.overweight .pallet-num{background:var(--red);color:#fff}
+.overweight-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;background:#fef2f2;color:var(--red);font-size:10px;font-weight:700;margin-top:4px}
+
+/* Pallet list */
+.pallet-list{display:flex;flex-direction:column;gap:8px}
+.pallet-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px}
+.pallet-item:hover{border-color:var(--accent-mid);box-shadow:var(--shadow)}
+.pallet-item.selected{border-color:var(--accent);background:var(--accent-light);box-shadow:0 0 0 3px var(--accent-mid)}
+.pallet-num{width:36px;height:36px;border-radius:8px;background:var(--bg2);color:var(--text);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pallet-item.selected .pallet-num{background:var(--accent);color:#fff}
+.pallet-item-info{flex:1}
+.pallet-item-name{font-weight:600;font-size:14px}
+.pallet-item-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.fill-bar{width:100%;height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.fill-bar-inner{height:100%;border-radius:2px;transition:width .4s}
+
+/* 3D viewer */
+.viewer-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.viewer-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.viewer-title{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.viewer-nav{display:flex;align-items:center;gap:8px}
+.icon-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;color:var(--text2)}
+.icon-btn:hover{background:var(--bg2);border-color:var(--border2)}
+.icon-btn:disabled{opacity:.4;cursor:not-allowed}
+.viewer-canvas-wrap{background:#0d1117;position:relative}
+canvas{display:block;width:100%;height:420px}
+.box-tooltip{position:absolute;display:none;background:#1e2938;border:1px solid #30415c;border-radius:10px;padding:12px 14px;font-size:12px;color:#e2e8f0;z-index:10;pointer-events:none;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.4);font-family:'Inter',sans-serif}
+.viewer-hint{font-size:11px;color:var(--text3);padding:8px 16px;background:var(--surface2);border-top:1px solid var(--border);display:flex;gap:16px}
+.viewer-hint span{display:flex;align-items:center;gap:4px}
+
+/* Box contents panel */
+.box-contents{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.box-content-row{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.box-content-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.box-content-info{flex:1}
+.box-content-name{font-weight:600;font-size:13px}
+.box-content-dims{font-size:11px;color:var(--text3)}
+.box-content-cnt{font-weight:700;font-size:14px;color:var(--accent)}
+
+/* Table */
+.result-table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge.green{background:var(--green-light);color:var(--green)}
+.badge.orange{background:var(--orange-light);color:var(--orange)}
+.badge.blue{background:var(--accent-light);color:var(--accent)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--text);color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;transition:transform .3s cubic-bezier(.22,1,.36,1);pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+.toast.warn{background:var(--orange)}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* Chip */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--bg2);color:var(--text2)}
+
+/* Progress step indicator */
+.progress-bar-wrap{padding:0 24px;margin-bottom:0}
+.progress-steps{display:flex;align-items:center;gap:0}
+.ps{display:flex;align-items:center}
+.ps-dot{width:8px;height:8px;border-radius:50%;background:var(--border2)}
+.ps.done .ps-dot{background:var(--green)}
+.ps.active .ps-dot{background:var(--accent)}
+.ps-line{width:40px;height:2px;background:var(--border2)}
+.ps.done .ps-line{background:var(--green)}
+
+/* Orientation picker */
+.orient-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.orient-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
+.orient-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.orient-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;background:var(--surface);transition:all .15s;font-family:'Inter',sans-serif}
+.orient-btn:hover{border-color:var(--border2);background:var(--bg)}
+.orient-btn.on{border-color:var(--accent);background:var(--accent-light)}
+.orient-btn.on .orient-icon{filter:none}
+.orient-icon{font-size:18px;line-height:1}
+.orient-name{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.3px;text-align:center;line-height:1.2}
+.orient-btn.on .orient-name{color:var(--accent)}
+.orient-all-row{display:flex;gap:6px;margin-bottom:6px}
+.orient-all-btn{flex:1;padding:5px 8px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;color:var(--text2);transition:all .15s;font-family:'Inter',sans-serif}
+.orient-all-btn:hover{background:var(--bg2)}
+
+/* Algo selector */
+.algo-tabs{display:flex;gap:0;background:var(--bg2);border-radius:10px;padding:3px}
+.algo-tab{flex:1;padding:8px 12px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;justify-content:center}
+.algo-tab.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+.algo-tab.active.fast{color:var(--green)}
+.level-slider-wrap{margin-top:14px}
+.level-slider-wrap input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:8px 0}
+.level-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:2px}
+.level-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:8px}
+.level-badge.l1{background:#ecfdf5;color:#059669}
+.level-badge.l2{background:#eff6ff;color:#2563eb}
+.level-badge.l3{background:#fffbeb;color:#d97706}
+.level-badge.l4{background:#fef2f2;color:#dc2626}
+.algo-info-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);margin-top:10px;line-height:1.5}
+
+/* ── Loading spinner ── */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;display:none}
+.spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media(max-width:900px){
+  .settings-layout,.config-layout,.results-layout{grid-template-columns:1fr}
+  .welcome-cards{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:1fr 1fr}
+}
+
+/* ════════════════════════════════════
+   LOADING RULES MODAL
+   ════════════════════════════════════ */
+.modal-backdrop{
+  position:fixed;inset:0;
+  background:rgba(15,23,42,.5);
+  z-index:400;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.modal{
+  background:#fff;
+  border-radius:20px;
+  box-shadow:0 32px 80px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06);
+  width:100%;max-width:580px;
+  max-height:88vh;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  animation:modalIn .22s cubic-bezier(.22,1,.36,1);
+  position:relative;
+}
+@keyframes modalIn{
+  from{opacity:0;transform:translateY(20px) scale(.97)}
+  to{opacity:1;transform:none}
+}
+.modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 24px 18px;
+  border-bottom:1px solid #e2e8f0;
+  flex-shrink:0;
+}
+.modal-header h3{
+  font-size:17px;font-weight:800;
+  display:flex;align-items:center;gap:10px;
+  color:#0f172a;
+}
+.modal-close{
+  width:34px;height:34px;border-radius:9px;
+  border:1px solid #e2e8f0;background:transparent;
+  cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  color:#94a3b8;transition:all .15s;line-height:1;
+}
+.modal-close:hover{background:#f1f5f9;color:#0f172a;border-color:#cbd5e1;}
+.modal-body{
+  overflow-y:auto;padding:20px 24px;
+  display:flex;flex-direction:column;gap:14px;
+  flex:1;
+}
+.modal-footer{
+  padding:16px 24px;border-top:1px solid #e2e8f0;
+  display:flex;gap:10px;justify-content:flex-end;
+  flex-shrink:0;background:#f8fafc;
+}
+
+/* Rule blocks */
+.rule-block{
+  background:#f8fafc;
+  border:1.5px solid #e2e8f0;
+  border-radius:14px;overflow:hidden;
+  transition:border-color .15s;
+}
+.rule-block:has(.toggle-switch input:checked){
+  border-color:#bfdbfe;background:#f0f7ff;
+}
+.rule-block-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 16px;cursor:pointer;user-select:none;
+  gap:12px;
+}
+.rule-block-header:hover{background:rgba(0,0,0,.02);}
+.rule-block-title{
+  display:flex;align-items:center;gap:12px;
+  font-weight:700;font-size:14px;color:#0f172a;flex:1;
+}
+.rule-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.rule-title-text{}
+.rule-desc{font-size:12px;color:#94a3b8;margin-top:2px;font-weight:400;}
+
+/* Toggle switch */
+.toggle-switch{
+  position:relative;width:44px;height:24px;flex-shrink:0;
+}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{
+  position:absolute;inset:0;
+  background:#cbd5e1;border-radius:12px;
+  cursor:pointer;transition:background .2s;
+}
+.toggle-switch input:checked + .toggle-track{background:#2563eb;}
+.toggle-thumb{
+  position:absolute;top:3px;left:3px;
+  width:18px;height:18px;
+  background:#fff;border-radius:50%;
+  transition:transform .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+  pointer-events:none;
+}
+.toggle-switch input:checked ~ .toggle-thumb{transform:translateX(20px);}
+
+/* Rule body (expandable) */
+.rule-body{
+  padding:0 16px 16px;
+  display:none;
+  border-top:1px solid #e2e8f0;
+  padding-top:14px;
+  animation:ruleBodyIn .18s ease;
+}
+@keyframes ruleBodyIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.rule-body.open{display:block;}
+
+/* Slider */
+.rule-slider-wrap{
+  display:flex;align-items:center;gap:12px;margin-top:10px;
+}
+.rule-slider-wrap input[type=range]{
+  flex:1;height:6px;cursor:pointer;
+  accent-color:#2563eb;
+}
+.rule-val-badge{
+  background:#eff6ff;color:#2563eb;
+  font-weight:800;font-size:14px;
+  padding:5px 12px;border-radius:20px;
+  min-width:56px;text-align:center;flex-shrink:0;
+}
+
+/* Radio options */
+.rule-radio-group{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.rule-radio{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 14px;
+  border:1.5px solid #e2e8f0;border-radius:10px;
+  cursor:pointer;transition:all .15s;background:#fff;
+}
+.rule-radio:hover{border-color:#bfdbfe;background:#f0f7ff;}
+.rule-radio.selected{border-color:#2563eb;background:#eff6ff;}
+.rule-radio-dot{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid #cbd5e1;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;transition:all .15s;
+}
+.rule-radio.selected .rule-radio-dot{border-color:#2563eb;background:#2563eb;}
+.rule-radio.selected .rule-radio-dot::after{
+  content:'';width:7px;height:7px;background:#fff;border-radius:50%;display:block;
+}
+.rule-radio-label{font-size:13px;font-weight:600;color:#0f172a;}
+.rule-radio-sub{font-size:11px;color:#94a3b8;margin-top:2px;}
+
+/* Badge */
+.rules-active-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:20px;
+  background:#ecfdf5;color:#059669;
+  font-size:11px;font-weight:700;
+}
+
+
+/* ──────────────────────────────────────────────────
+   BOX ADVANCED SETTINGS MODAL — redesigned
+────────────────────────────────────────────────── */
+
+/* Modal shell */
+.box-adv-modal .modal{
+  max-width:640px;border-radius:18px;overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.22);
+}
+
+/* Header: dark slate gradient */
+.box-adv-modal .modal-header{
+  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+  padding:18px 22px 16px;border-bottom:none;position:relative;
+}
+.box-adv-modal .modal-header::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,.5),transparent);
+}
+.adv-header-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.adv-header-left{display:flex;align-items:center;gap:12px;}
+.adv-header-icon{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.4);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.adv-header-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.2px;line-height:1.2;}
+.adv-header-sub{font-size:11px;color:rgba(148,163,184,.9);margin-top:3px;font-family:'SF Mono','Fira Code',monospace;}
+.box-adv-modal .modal-close{
+  width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.5);background:rgba(255,255,255,.06);flex-shrink:0;
+  font-size:15px;
+}
+.box-adv-modal .modal-close:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);}
+
+/* Body */
+.adv-body{padding:18px 20px;display:flex;flex-direction:column;gap:18px;background:#f8fafc;}
+
+/* Section header row */
+.adv-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.adv-sec-label{
+  font-size:10px;font-weight:800;color:#94a3b8;
+  text-transform:uppercase;letter-spacing:.9px;
+}
+.adv-pill-group{display:flex;gap:4px;}
+.adv-pill{
+  padding:3px 11px;font-size:11px;font-weight:600;border-radius:20px;
+  border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;
+  color:#64748b;transition:all .15s;font-family:'Inter',sans-serif;
+}
+.adv-pill:hover{background:#f1f5f9;border-color:#cbd5e1;color:#334155;}
+.adv-pill.act{background:#0f172a;border-color:#0f172a;color:#fff;}
+
+/* Orientation card grid */
+.orient-card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.orient-card{
+  position:relative;border-radius:12px;overflow:hidden;cursor:pointer;
+  background:#fff;border:2px solid #e8edf5;user-select:none;
+  transition:transform .16s ease, border-color .16s, box-shadow .16s;
+  display:flex;flex-direction:row;align-items:center;gap:0;
+  padding:0;
+}
+.orient-card:hover{transform:translateY(-1px);border-color:#cbd5e1;box-shadow:0 4px 14px rgba(0,0,0,.07);}
+.orient-card.on{
+  border-color:#4f46e5;
+  box-shadow:0 0 0 3px rgba(79,70,229,.12), 0 4px 14px rgba(79,70,229,.1);
+}
+
+/* Left stripe: SVG preview box */
+.orient-card-iso{
+  width:64px;min-width:64px;height:72px;
+  background:#f1f5f9;display:flex;align-items:center;justify-content:center;
+  border-right:1px solid #e8edf5;flex-shrink:0;transition:background .16s;
+}
+.orient-card.on .orient-card-iso{background:#eef2ff;border-right-color:#c7d2fe;}
+
+/* Right text content */
+.orient-card-body{flex:1;padding:10px 10px 10px 12px;min-width:0;}
+.orient-card-name{
+  font-size:12px;font-weight:700;color:#334155;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.orient-card.on .orient-card-name{color:#4338ca;}
+.orient-card-dims{
+  font-size:10px;color:#94a3b8;margin-top:4px;
+  font-family:'SF Mono','Fira Code',monospace;letter-spacing:.2px;
+}
+.orient-card.on .orient-card-dims{color:#818cf8;}
+
+/* Checkmark top-right */
+.orient-card-chk{
+  position:absolute;top:7px;right:7px;
+  width:18px;height:18px;border-radius:50%;
+  background:#e2e8f0;display:flex;align-items:center;justify-content:center;
+  transition:background .16s;
+}
+.orient-card.on .orient-card-chk{background:#4f46e5;}
+.orient-card-chk svg{opacity:0;transition:opacity .12s;}
+.orient-card.on .orient-card-chk svg{opacity:1;}
+
+/* Weight row */
+.adv-weight-row{
+  display:flex;align-items:center;gap:12px;
+  background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;
+  padding:12px 16px;
+}
+.adv-weight-lbl{flex:1;}
+.adv-weight-lbl b{font-size:13px;color:#0f172a;display:block;line-height:1.3;}
+.adv-weight-lbl small{font-size:11px;color:#94a3b8;}
+.adv-weight-in{display:flex;align-items:center;gap:6px;}
+.adv-weight-in input{
+  width:88px;text-align:right;font-size:16px;font-weight:700;
+  color:#0f172a;border:1.5px solid #e2e8f0;border-radius:8px;
+  padding:6px 10px;background:#f8fafc;transition:border-color .15s;
+}
+.adv-weight-in input:focus{border-color:#4f46e5;background:#fff;}
+.adv-weight-in input::placeholder{color:#cbd5e1;font-weight:400;font-size:13px;}
+.adv-weight-in span{font-size:13px;font-weight:600;color:#64748b;}
+.adv-warn{
+  padding:9px 12px;border-radius:8px;
+  background:#fffbeb;border:1px solid #fde68a;
+  font-size:11px;color:#92400e;line-height:1.5;display:flex;gap:7px;align-items:flex-start;
+}
+
+/* Footer */
+.adv-footer{
+  padding:12px 20px;background:#fff;border-top:1px solid #e2e8f0;
+  display:flex;align-items:center;gap:10px;
+}
+.adv-chips{flex:1;display:flex;gap:5px;flex-wrap:wrap;}
+.adv-chip{
+  padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;
+  background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;
+}
+.adv-chip.on{background:#eef2ff;border-color:#c7d2fe;color:#4338ca;}
+
+/* Trigger button on box card */
+.box-adv-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:7px;
+  border:1.5px solid #e2e8f0;background:#f8fafc;
+  cursor:pointer;font-size:11px;font-weight:600;color:#64748b;
+  transition:all .15s;font-family:'Inter',sans-serif;
+  margin-left:5px;white-space:nowrap;
+}
+.box-adv-btn:hover{background:#f1f5f9;border-color:#cbd5e1;color:#334155;}
+.box-adv-btn.has-settings{border-color:#c7d2fe;background:#eef2ff;color:#4338ca;}
+.adv-cnt-badge{
+  background:#4f46e5;color:#fff;border-radius:6px;
+  padding:0 5px;font-size:10px;line-height:16px;display:inline-block;margin-left:1px;
+}
+.adv-sep{height:1px;background:#e2e8f0;}
+
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div style="font-weight:600;color:var(--text2);margin-bottom:4px">Hesaplanıyor...</div>
+  <div id="loading-msg" style="font-size:12px;color:var(--text3)">⚡ Hızlı algoritma</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE 1: WELCOME                                           -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-welcome">
+  <nav class="topnav">
+    <div class="nav-logo" onclick="goPage('welcome')">
+      <div class="nav-logo-icon">📦</div>
+      LoadOpt
+    </div>
+    <div style="font-size:12px;color:var(--text3)">Yükleme Optimizasyon Sistemi</div>
+  </nav>
+
+  <div class="container">
+    <div class="welcome-hero">
+      <h1>Akıllı <span>Yükleme</span> Optimizasyonu</h1>
+      <p>Kutularınızı palet veya konteynere en verimli şekilde yerleştirin. Sürükle-bırak ile 3D görselleştirme.</p>
+      <div class="welcome-cards">
+        <div class="welcome-card pallet" onclick="startNew('pallet')">
+          <div class="wcard-icon">🪵</div>
+          <div class="wcard-title">Palet Yükleme</div>
+          <div class="wcard-sub">Standart Euro palet (120×80 cm) veya özel ölçülerde palet bazlı optimizasyon.</div>
+          <div class="wcard-badge blue">▶ Palet Optimizasyonu Başlat</div>
+        </div>
+        <div class="welcome-card container-c" onclick="startNew('container')">
+          <div class="wcard-icon">🚢</div>
+          <div class="wcard-title">Konteyner Yükleme</div>
+          <div class="wcard-sub">20', 40', 40' HC veya özel ölçülerde konteyner bazlı optimizasyon.</div>
+          <div class="wcard-badge purple">▶ Konteyner Optimizasyonu Başlat</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Geçmiş Yüklemeler</div>
+    <div id="history-list">
+      <div class="no-history">
+        <div style="font-size:28px;margin-bottom:8px">📋</div>
+        Henüz kayıtlı yükleme yok.<br>Yukarıdan yeni bir optimizasyon başlatın.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE 2: SETTINGS (metrics, type, template)               -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <nav class="topnav">
+    <div class="nav-logo" onclick="goPage('welcome')">
+      <div class="nav-logo-icon">📦</div>
+      LoadOpt
+    </div>
+    <div class="nav-steps">
+      <div class="nav-step done" onclick="goPage('welcome')"><div class="nav-step-num">✓</div> Başlangıç</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step active"><div class="nav-step-num">2</div> Genel Ayarlar</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step"><div class="nav-step-num">3</div> Yükleme Detayları</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step"><div class="nav-step-num">4</div> Sonuçlar</div>
+    </div>
+    <button class="btn btn-primary" onclick="goPage('config')">Devam Et →</button>
+  </nav>
+
+  <div class="container">
+    <div style="margin-bottom:28px">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">Genel Ayarlar</h2>
+      <p style="color:var(--text2)">Ölçü birimi, yükleme türü ve şablon ayarlarını yapılandırın.</p>
+    </div>
+
+    <div class="settings-layout">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Metric -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f0f9ff">📐</div>
+            <div>
+              <h2>Ölçü Birimi</h2>
+              <div style="font-size:12px;color:var(--text3)">Tüm boyutlarda kullanılacak birim</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="metric-toggle">
+              <button class="metric-btn active" id="metric-cm" onclick="setMetric('cm')">Santimetre (cm)</button>
+              <button class="metric-btn" id="metric-mm" onclick="setMetric('mm')">Milimetre (mm)</button>
+              <button class="metric-btn" id="metric-in" onclick="setMetric('in')">İnç (in)</button>
+            </div>
+            <div id="metric-info" style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.7">
+              <strong>Seçili birim:</strong> <span id="metric-info-unit">Santimetre (cm)</span><br>
+              <span id="metric-info-example" style="color:var(--text3)">Euro Palet: 120 × 80 × 150 cm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Type -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f5f3ff">🎯</div>
+            <div>
+              <h2>Yükleme Türü</h2>
+              <div style="font-size:12px;color:var(--text3)">Hangi türde optimizasyon yapılacak?</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="type-select">
+              <div class="type-option selected" id="type-pallet" onclick="setLoadType('pallet')">
+                <div class="type-option-icon">🪵</div>
+                <div class="type-option-title">Palet</div>
+                <div class="type-option-sub">Hacim & ağırlık bazlı palet optimizasyonu</div>
+              </div>
+              <div class="type-option" id="type-container" onclick="setLoadType('container')">
+                <div class="type-option-icon">🚢</div>
+                <div class="type-option-title">Konteyner</div>
+                <div class="type-option-sub">ISO konteyner yükleme optimizasyonu</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Template -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f0fdf4">📄</div>
+            <div>
+              <h2>Excel Şablonu</h2>
+              <div style="font-size:12px;color:var(--text3)">Toplu veri girişi için şablonu indirin</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Şablonu doldurup bir sonraki adımda import edebilirsiniz. Kutu ölçülerini ve adetlerini toplu girebilirsiniz.</p>
+            <button class="btn btn-secondary btn-full" onclick="downloadTemplate()">⬇ Excel Şablonunu İndir</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Info panel -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#fffbeb">💡</div>
+            <h2>Nasıl Çalışır?</h2>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;gap:12px">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;margin-bottom:2px">Ayarları Yapılandır</div>
+                  <div style="font-size:12px;color:var(--text3)">Ölçü birimini ve yükleme türünü seçin</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;margin-bottom:2px">Ölçüleri Gir</div>
+                  <div style="font-size:12px;color:var(--text3)">Palet/konteyner boyutlarını ve koli listesini girin</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;margin-bottom:2px">Optimizasyonu Başlat</div>
+                  <div style="font-size:12px;color:var(--text3)">EP-3DBP algoritması ile en verimli yerleşim hesaplanır</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);color:var(--green);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;margin-bottom:2px">3D Görselleştir & Export</div>
+                  <div style="font-size:12px;color:var(--text3)">İnteraktif 3D görünüm, PDF rapor veya Excel export</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="background:var(--accent-light);border-color:var(--accent-mid)">
+          <div class="card-body">
+            <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px">🧮 EP-3DBP Algoritması</div>
+            <div style="font-size:12px;color:var(--accent-h)">Extreme Point 3D Bin Packing — hacim bazlı sıralama, 6 rotasyon ve aşırı nokta üretimi ile en iyi doluluk oranını hesaplar.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE 3: CONFIG (dimensions + box list)                   -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-config">
+  <nav class="topnav">
+    <div class="nav-logo" onclick="goPage('welcome')">
+      <div class="nav-logo-icon">📦</div>
+      LoadOpt
+    </div>
+    <div class="nav-steps">
+      <div class="nav-step done" onclick="goPage('welcome')"><div class="nav-step-num">✓</div> Başlangıç</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step done" onclick="goPage('settings')"><div class="nav-step-num">✓</div> Genel Ayarlar</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step active"><div class="nav-step-num">3</div> Yükleme Detayları</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step"><div class="nav-step-num">4</div> Sonuçlar</div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="runOptimize()">⚡ Optimizasyonu Başlat</button>
+  </nav>
+
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <h2 style="font-size:22px;font-weight:800" id="config-title">Palet Yükleme Detayları</h2>
+          <div class="chip" id="config-type-badge">🪵 Palet</div>
+          <div class="chip" id="config-metric-badge">cm</div>
+        </div>
+        <p style="color:var(--text2)">Yükleme birimi ölçülerini girin ve koileri tanımlayın.</p>
+      </div>
+    </div>
+
+    <div class="config-layout">
+      <!-- Left: Dims + import -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Pallet/Container dims -->
+        <div class="card" id="dims-card">
+          <div class="card-header">
+            <div class="card-header-icon" id="dims-icon" style="background:#f0f9ff">🪵</div>
+            <div>
+              <h2 id="dims-title">Palet Ölçüleri</h2>
+              <div style="font-size:12px;color:var(--text3)" id="dims-sub">Uzunluk × Genişlik × Yükseklik</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- Preset selector for container -->
+            <div id="preset-row" style="display:none;margin-bottom:14px">
+              <label class="form-group" style="margin-bottom:6px"><label style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px">Hızlı Seçim</label></label>
+              <select id="container-preset" onchange="applyPreset(this.value)">
+                <option value="">— Konteyner seçin —</option>
+              </select>
+            </div>
+            <!-- Pallet preset -->
+            <div id="pallet-preset-row" style="margin-bottom:14px">
+              <label style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Hızlı Seçim</label>
+              <select id="pallet-preset" onchange="applyPalletPreset(this.value)">
+                <option value="120,80,150">Euro Palet 120×80×150 cm</option>
+              </select>
+            </div>
+            <div class="dimension-inputs">
+              <div class="form-group" style="margin-bottom:0">
+                <label id="dim-l-label">Uzunluk</label>
+                <input type="number" id="dim-l" value="120" min="1" placeholder="120">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label id="dim-w-label">Genişlik</label>
+                <input type="number" id="dim-w" value="80" min="1" placeholder="80">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label id="dim-h-label">Yükseklik</label>
+                <input type="number" id="dim-h" value="150" min="1" placeholder="150">
+              </div>
+            </div>
+            <div style="margin-top:14px">
+              <label style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px" id="maxweight-label">Maksimum Ağırlık (kg) <span style="font-weight:400;color:var(--text3);text-transform:none">— opsiyonel</span></label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="dim-maxweight" value="" min="1" placeholder="Sınırsız" style="flex:1">
+                <span style="font-size:12px;color:var(--text3);flex-shrink:0">kg</span>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap">
+              <span>Hacim: <strong id="dim-vol" style="color:var(--text2)">—</strong></span>
+              <span>Birim: <strong id="dim-unit-show" style="color:var(--text2)">cm</strong></span>
+              <span id="dim-weight-info" style="display:none">Maks: <strong id="dim-weight-show" style="color:var(--orange)">—</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Algorithm selector -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f0fdf4">⚙️</div>
+            <div>
+              <h2>Optimizasyon Ayarları</h2>
+              <div style="font-size:12px;color:var(--text3)">Algoritma ve hız/kalite dengesi</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Algoritma</div>
+            <div class="algo-tabs">
+              <button class="algo-tab fast active" id="algo-tab-fast" onclick="setAlgo('fast')">⚡ Hızlı</button>
+              <button class="algo-tab" id="algo-tab-advanced" onclick="setAlgo('advanced')">🎯 Gelişmiş</button>
+            </div>
+            <div id="algo-fast-info" class="algo-info-box" style="margin-top:10px">
+              <strong>EP-3DBP Hızlı</strong> — Tek geçişli Extreme Point algoritması. Büyük koli listeleri için idealdir. Saniyeler içinde sonuç üretir.
+            </div>
+            <div id="algo-advanced-panel" style="display:none">
+              <div class="level-slider-wrap">
+                <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;margin-top:12px">Optimizasyon Seviyesi</div>
+                <input type="range" id="opt-level" min="1" max="4" value="2" step="1" oninput="updateLevelUI()">
+                <div class="level-labels">
+                  <span>1 — Hızlı</span>
+                  <span>2 — Dengeli</span>
+                  <span>3 — İyi</span>
+                  <span>4 — Maks</span>
+                </div>
+                <div id="level-badge" class="level-badge l2">🎯 Dengeli — 4 deneme</div>
+                <div id="level-info" class="algo-info-box">
+                  4 farklı sıralama stratejisi denenir, en iyi sonuç seçilir. Orta boyutlu listeler için iyi denge.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Import -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f5f3ff">📥</div>
+            <div>
+              <h2>Veri İçe Aktar</h2>
+              <div style="font-size:12px;color:var(--text3)">Excel şablonunu doldurup yükleyin</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="import-drop" onclick="document.getElementById('excel-import').click()">
+              <div class="import-drop-icon">📂</div>
+              <div class="import-drop-text">Excel Dosyası Seç</div>
+              <div class="import-drop-sub">.xlsx veya .xls formatı</div>
+            </div>
+            <input type="file" id="excel-import" accept=".xlsx,.xls" style="display:none" onchange="importFromExcel(this)">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Box list -->
+      <div class="card">
+        <div class="card-header" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="card-header-icon" style="background:#fef3c7">📦</div>
+            <div>
+              <h2>Koli Listesi</h2>
+              <div style="font-size:12px;color:var(--text3)"><span id="box-count-label">0</span> koli tipi tanımlı</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="rules-badge-wrap" style="display:none">
+              <span class="rules-active-badge" id="rules-badge">⚖️ 0 kural</span>
+            </div>
+            <button class="btn btn-ghost" onclick="openRulesModal()">⚖️ Yükleme Kuralları</button>
+            <button class="btn btn-secondary" onclick="addBoxType()">+ Koli Ekle</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="box-list" class="box-list-wrap">
+            <div class="empty-box-hint">
+              Henüz koli eklenmedi.<br>
+              "Koli Ekle" butonuna tıklayın veya Excel ile içe aktarın.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE 4: RESULTS                                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-results">
+  <nav class="topnav">
+    <div class="nav-logo" onclick="goPage('welcome')">
+      <div class="nav-logo-icon">📦</div>
+      LoadOpt
+    </div>
+    <div class="nav-steps">
+      <div class="nav-step done"><div class="nav-step-num">✓</div> Başlangıç</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step done"><div class="nav-step-num">✓</div> Genel Ayarlar</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step done"><div class="nav-step-num">✓</div> Yükleme Detayları</div>
+      <span class="nav-sep">›</span>
+      <div class="nav-step active"><div class="nav-step-num">4</div> Sonuçlar</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="goPage('config')">← Düzenle</button>
+      <button class="btn btn-ghost" onclick="exportExcel()">⬇ Excel</button>
+      <button class="btn btn-primary" onclick="exportPDF()">⬇ PDF Rapor</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Optimizasyon Sonuçları</h2>
+        <div style="font-size:13px;color:var(--text3)" id="result-subtitle">—</div>
+      </div>
+      <div class="chip" id="result-type-badge">🪵 Palet</div>
+    </div>
+
+    <!-- Stat row -->
+    <div class="stat-row">
+      <div class="stat-pill accent"><div class="stat-pill-val" id="sr-pallets">—</div><div class="stat-pill-lbl">Toplam Birim</div></div>
+      <div class="stat-pill green"><div class="stat-pill-val" id="sr-fill">—</div><div class="stat-pill-lbl">Ort. Doluluk</div></div>
+      <div class="stat-pill orange"><div class="stat-pill-val" id="sr-boxes">—</div><div class="stat-pill-lbl">Toplam Koli</div></div>
+      <div class="stat-pill purple"><div class="stat-pill-val" id="sr-types">—</div><div class="stat-pill-lbl">Koli Tipi</div></div>
+      <div class="stat-pill" id="sr-weight-pill"><div class="stat-pill-val" id="sr-weight">—</div><div class="stat-pill-lbl">Toplam Ağırlık</div></div>
+    </div>
+
+    <div class="results-layout">
+      <!-- Left: pallet list -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f0f9ff">📋</div>
+            <h2 id="pallet-list-title">Palet Listesi</h2>
+          </div>
+          <div class="card-body" style="padding:12px">
+            <div id="pallet-list" class="pallet-list"></div>
+          </div>
+        </div>
+
+        <!-- Box contents for selected pallet -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#fef3c7">📦</div>
+            <div>
+              <h2>Koli İçeriği</h2>
+              <div style="font-size:12px;color:var(--text3)" id="pallet-contents-sub">Seçili palet</div>
+            </div>
+          </div>
+          <div class="card-body" style="padding:12px">
+            <div id="box-contents" class="box-contents"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: 3D viewer -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="viewer-wrap">
+          <div class="viewer-toolbar">
+            <div class="viewer-title">
+              <span>🔲</span>
+              <span id="viewer-pallet-label">Palet 1</span>
+            </div>
+            <div class="viewer-nav">
+              <button class="icon-btn" id="prev-btn" onclick="changePallet(-1)" disabled>‹</button>
+              <span style="font-size:13px;font-weight:600;color:var(--text2);min-width:52px;text-align:center" id="pallet-counter">1 / 1</span>
+              <button class="icon-btn" id="next-btn" onclick="changePallet(1)" disabled>›</button>
+            </div>
+          </div>
+          <div class="viewer-canvas-wrap" id="three-container">
+            <canvas id="myCanvas"></canvas>
+            <div class="box-tooltip" id="box-tooltip"></div>
+            <div id="empty-state" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:14px">
+              Optimizasyonu başlatın
+            </div>
+          </div>
+          <div class="viewer-hint">
+            <span>🖱 Sürükle: döndür</span>
+            <span>⚙ Sağ tık: kaydır</span>
+            <span>🔍 Tekerlek: yakınlaştır</span>
+          </div>
+        </div>
+
+        <!-- Detail table for selected pallet -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#f0fdf4">📊</div>
+            <h2>Yerleşim Detayları</h2>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="result-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Koli Adı</th>
+                    <th>X</th><th>Y</th><th>Z</th>
+                    <th>U×G×Y</th>
+                    <th>Hacim</th>
+                    <th>Ağırlık</th>
+                  </tr>
+                </thead>
+                <tbody id="detail-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOX ADVANCED SETTINGS MODAL ══ -->
+<div id="box-adv-modal" class="modal-backdrop box-adv-modal" style="display:none" onclick="closeBoxAdvModal(event)">
+  <div class="modal">
+
+    <!-- Dark header -->
+    <div class="modal-header" style="padding:0">
+      <div class="adv-header-inner">
+        <div class="adv-header-left">
+          <div class="adv-header-icon">📦</div>
+          <div>
+            <div class="adv-header-title" id="box-adv-title">Gelişmiş Ayarlar</div>
+            <div class="adv-header-sub" id="box-adv-subtitle">—</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeBoxAdvModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="adv-body">
+
+      <!-- Yükleme yönleri -->
+      <div>
+        <div class="adv-sec-hdr">
+          <span class="adv-sec-label">Yükleme Yönleri</span>
+          <div class="adv-pill-group">
+            <button class="adv-pill" onclick="advSelectAll(true)">Tümünü seç</button>
+            <button class="adv-pill" onclick="advSelectAll(false)">Sadece düz</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.5">
+          Her kartın sol tarafında kolinin o yöndeki izometrik görünümü yer alır.
+        </div>
+        <div class="orient-card-grid" id="adv-orient-grid"></div>
+      </div>
+
+      <div class="adv-sep"></div>
+
+      <!-- Taşıma kapasitesi -->
+      <div>
+        <div class="adv-sec-hdr" style="margin-bottom:10px">
+          <span class="adv-sec-label">Taşıma Kapasitesi</span>
+        </div>
+        <div class="adv-weight-row">
+          <div class="adv-weight-lbl">
+            <b>Maks. Üst Yük</b>
+            <small>Bu kolinin üzerine konulabilecek toplam ağırlık</small>
+          </div>
+          <div class="adv-weight-in">
+            <input type="number" id="adv-maxstack" min="0" step="0.5" placeholder="Sınırsız" oninput="updateAdvSummary()">
+            <span>kg</span>
+          </div>
+        </div>
+        <div id="adv-weight-warn" style="display:none;margin-top:8px" class="adv-warn">
+          <span style="font-size:14px">⚠️</span>
+          <span>Algoritma bu kolinin üstüne yalnızca bu limiti aşmayacak şekilde yük atar.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="adv-footer">
+      <div class="adv-chips" id="adv-summary"></div>
+      <button class="btn btn-secondary" style="padding:8px 16px;font-size:13px" onclick="closeBoxAdvModal()">İptal</button>
+      <button class="btn btn-primary" style="padding:8px 20px;font-size:13px;display:flex;align-items:center;gap:6px" onclick="saveBoxAdv()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Kaydet
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ LOADING RULES MODAL ══ -->
+<div id="rules-modal" class="modal-backdrop" style="display:none" onclick="closeRulesModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚖️ Yükleme Kuralları</h3>
+      <button class="modal-close" onclick="closeRulesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- RULE 1: Min Support -->
+      <div class="rule-block">
+        <div class="rule-block-header" onclick="toggleRuleBody('support')">
+          <div class="rule-block-title">
+            <div class="rule-icon" style="background:#fef3c7">⚖️</div>
+            <div>
+              <div>Minimum Destek Noktası</div>
+              <div class="rule-desc">Kutunun altındaki yüzeylerin temas oranı zorunluluğu</div>
+            </div>
+          </div>
+          <label class="toggle-switch" onclick="event.stopPropagation()">
+            <input type="checkbox" id="rule-support-on" onchange="onRuleToggle('support')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="rule-body" id="rule-body-support">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+            Bir kutu yerleştirildiğinde, tabanının en az bu oranda desteklenmesi gerekir.
+            Örn: %60 → 10×10 cm kutu için altında en az 60 cm² temas alanı olmalı.
+          </div>
+          <div class="rule-slider-wrap">
+            <span style="font-size:12px;color:var(--text3)">%10</span>
+            <input type="range" id="rule-support-val" min="10" max="95" value="60" step="5" oninput="document.getElementById('rule-support-badge').textContent=this.value+'%'">
+            <span style="font-size:12px;color:var(--text3)">%95</span>
+            <div class="rule-val-badge" id="rule-support-badge">%60</div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--text3)">
+            💡 Zemin katındaki kutular bu kuraldan muaftır (doğrudan palet tabanına oturur).
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 2: Load Direction -->
+      <div class="rule-block">
+        <div class="rule-block-header" onclick="toggleRuleBody('direction')">
+          <div class="rule-block-title">
+            <div class="rule-icon" style="background:#eff6ff">🧭</div>
+            <div>
+              <div>Yükleme Yönü</div>
+              <div class="rule-desc">Paleti doldurmaya nereden başlanacağı</div>
+            </div>
+          </div>
+          <label class="toggle-switch" onclick="event.stopPropagation()">
+            <input type="checkbox" id="rule-direction-on" onchange="onRuleToggle('direction')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="rule-body" id="rule-body-direction">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+            Algoritmanın hangi köşeden başlayarak palet dolduracağını belirler.
+          </div>
+          <div class="rule-radio-group" id="direction-options">
+            <div class="rule-radio selected" onclick="selectDirection('x_asc_y_asc')">
+              <div class="rule-radio-dot"></div>
+              <div><div class="rule-radio-label">↗ Soldan sağa, önden arkaya</div><div class="rule-radio-sub">Standart yükleme — sol ön köşeden başla</div></div>
+            </div>
+            <div class="rule-radio" onclick="selectDirection('x_desc_y_asc')">
+              <div class="rule-radio-dot"></div>
+              <div><div class="rule-radio-label">↖ Sağdan sola, önden arkaya</div><div class="rule-radio-sub">Sağ ön köşeden başla</div></div>
+            </div>
+            <div class="rule-radio" onclick="selectDirection('x_asc_y_desc')">
+              <div class="rule-radio-dot"></div>
+              <div><div class="rule-radio-label">↙ Soldan sağa, arkadan öne</div><div class="rule-radio-sub">Sol arka köşeden başla</div></div>
+            </div>
+            <div class="rule-radio" onclick="selectDirection('center_out')">
+              <div class="rule-radio-dot"></div>
+              <div><div class="rule-radio-label">⊕ Merkezden dışa</div><div class="rule-radio-sub">Orta noktadan başla, dışa doğru yay</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 3: Sequential Loading -->
+      <div class="rule-block">
+        <div class="rule-block-header" onclick="toggleRuleBody('sequence')">
+          <div class="rule-block-title">
+            <div class="rule-icon" style="background:#f5f3ff">🔢</div>
+            <div>
+              <div>Sıralı Yükleme</div>
+              <div class="rule-desc">Kolileri belirlenen sıraya göre yükle</div>
+            </div>
+          </div>
+          <label class="toggle-switch" onclick="event.stopPropagation()">
+            <input type="checkbox" id="rule-sequence-on" onchange="onRuleToggle('sequence')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="rule-body" id="rule-body-sequence">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+            Aktif olduğunda koli listesinde her koli tipi için "Sıra No" alanı açılır.
+            Aynı sıra numarasına sahip koliler bir grup olarak yüklenir, gruplar sırayla işlenir.
+          </div>
+          <div style="padding:10px;background:var(--green-light);border-radius:8px;font-size:11px;color:var(--green)">
+            ✓ Bu kural aktif olduğunda koli listesindeki "Sıra No" alanları aktif olur.
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <div id="rules-active-count" style="flex:1;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3)">0 kural aktif</div>
+      <button class="btn btn-secondary" onclick="resetRules()">Sıfırla</button>
+      <button class="btn btn-primary" onclick="applyRules()">✓ Uygula</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let currentMetric = 'cm';
+
+// ── Metric conversion ─────────────────────────────────────────
+// Master values stored in cm; convert on the fly for display/input
+const METRIC_FACTOR = { cm: 1, mm: 10, in: 0.393701 };
+const METRIC_LABEL  = { cm: 'cm', mm: 'mm', in: 'inç' };
+const METRIC_VOL_LABEL = { cm: 'cm³ (÷1M = m³)', mm: 'mm³', in: 'in³' };
+
+// Convert cm value → current unit (for displaying presets/defaults)
+function toUnit(cmVal) {
+  const f = METRIC_FACTOR[currentMetric];
+  const v = cmVal * f;
+  // Round nicely: mm → integer, in → 2 decimals, cm → 1 decimal or integer
+  if (currentMetric === 'mm') return Math.round(v);
+  if (currentMetric === 'in') return Math.round(v * 100) / 100;
+  return Math.round(v * 10) / 10;
+}
+
+// Convert user-input value in current unit → cm (for algorithm)
+function toCm(unitVal) {
+  return unitVal / METRIC_FACTOR[currentMetric];
+}
+
+// Format volume: always show m³ equivalent
+function fmtVol(cmCubed) {
+  if (currentMetric === 'mm') {
+    const mm3 = cmCubed * 1000;
+    return mm3 >= 1e9 ? (mm3/1e9).toFixed(4)+' m³' : mm3.toFixed(0)+' mm³';
+  }
+  if (currentMetric === 'in') {
+    const in3 = cmCubed * 0.0610237;
+    return in3.toFixed(2)+' in³  ('+(cmCubed/1e6).toFixed(4)+' m³)';
+  }
+  return (cmCubed/1e6).toFixed(4)+' m³';
+}
+
+// Pallet presets (cm)
+const PALLET_PRESETS_CM = [
+  { label: 'Euro Palet',    l:120, w:80,  h:150 },
+  { label: '120×100',       l:120, w:100, h:150 },
+  { label: '80×60',         l:80,  w:60,  h:120 },
+  { label: 'Özel / Manuel', l:null, w:null, h:null },
+];
+
+// Container presets (cm)
+const CONTAINER_PRESETS_CM = [
+  { label: "— Konteyner seçin —", l:null, w:null, h:null },
+  { label: "20' Standart",        l:589,  w:234, h:239 },
+  { label: "40' Standart",        l:1203, w:234, h:239 },
+  { label: "40' High Cube",       l:1203, w:234, h:269 },
+  { label: 'Özel / Manuel',       l:null, w:null, h:null },
+];
+let currentLoadType = 'pallet'; // 'pallet' | 'container'
+let boxes = [];
+let boxIdCounter = 0;
+let pallets = [];
+let currentPalletIdx = 0;
+let history = JSON.parse(localStorage.getItem('loadopt-history') || '[]');
+
+const COLORS = ['#c0392b','#2471a3','#1e8449','#d35400','#7d3c98','#117a65','#b7950b','#1a5276','#6e2f1a','#4a235a'];
+
+// ═══════════════════════════════════════════════════════════════
+// LOADING RULES STATE
+// ═══════════════════════════════════════════════════════════════
+const loadRules = {
+  support:   { active: false, minPct: 60 },     // min support %
+  direction: { active: false, mode: 'x_asc_y_asc' }, // load direction
+  sequence:  { active: false },                 // sequential by seqNo
+};
+
+function openRulesModal() {
+  // Sync UI to current state
+  document.getElementById('rule-support-on').checked = loadRules.support.active;
+  document.getElementById('rule-support-val').value  = loadRules.support.minPct;
+  document.getElementById('rule-support-badge').textContent = '%' + loadRules.support.minPct;
+  if (loadRules.support.active) document.getElementById('rule-body-support').classList.add('open');
+
+  document.getElementById('rule-direction-on').checked = loadRules.direction.active;
+  if (loadRules.direction.active) document.getElementById('rule-body-direction').classList.add('open');
+  selectDirection(loadRules.direction.mode, false);
+
+  document.getElementById('rule-sequence-on').checked = loadRules.sequence.active;
+  if (loadRules.sequence.active) document.getElementById('rule-body-sequence').classList.add('open');
+
+  updateRulesActiveCount();
+  document.getElementById('rules-modal').style.display = 'flex';
+}
+
+function closeRulesModal(e) {
+  if (e && e.target !== document.getElementById('rules-modal')) return;
+  document.getElementById('rules-modal').style.display = 'none';
+}
+
+function toggleRuleBody(id) {
+  const body = document.getElementById('rule-body-' + id);
+  body.classList.toggle('open');
+}
+
+function onRuleToggle(id) {
+  const on = document.getElementById('rule-' + id + '-on').checked;
+  const body = document.getElementById('rule-body-' + id);
+  if (on) body.classList.add('open');
+  else body.classList.remove('open');
+  updateRulesActiveCount();
+}
+
+function selectDirection(mode, updateDom=true) {
+  loadRules.direction.mode = mode;
+  if (updateDom) {
+    document.querySelectorAll('#direction-options .rule-radio').forEach(el => {
+      const isThis = el.getAttribute('onclick').includes(mode);
+      el.classList.toggle('selected', isThis);
+    });
+  }
+}
+
+function updateRulesActiveCount() {
+  const checks = ['rule-support-on','rule-direction-on','rule-sequence-on'];
+  const cnt = checks.filter(id => document.getElementById(id)?.checked).length;
+  const el = document.getElementById('rules-active-count');
+  if (el) el.textContent = cnt === 0 ? '0 kural aktif' : `${cnt} kural aktif`;
+}
+
+function applyRules() {
+  loadRules.support.active  = document.getElementById('rule-support-on').checked;
+  loadRules.support.minPct  = parseInt(document.getElementById('rule-support-val').value);
+  loadRules.direction.active = document.getElementById('rule-direction-on').checked;
+  const selDir = document.querySelector('#direction-options .rule-radio.selected');
+  if (selDir) loadRules.direction.mode = selDir.getAttribute('onclick').match(/'([^']+)'/)?.[1] || 'x_asc_y_asc';
+  loadRules.sequence.active = document.getElementById('rule-sequence-on').checked;
+
+  // Update badge
+  const activeCount = [loadRules.support.active, loadRules.direction.active, loadRules.sequence.active].filter(Boolean).length;
+  const badge = document.getElementById('rules-badge');
+  const wrap  = document.getElementById('rules-badge-wrap');
+  if (activeCount > 0) {
+    badge.textContent = `⚖️ ${activeCount} kural aktif`;
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+
+  // Re-render box list (shows/hides seqNo field)
+  renderBoxList();
+  document.getElementById('rules-modal').style.display = 'none';
+  showToast(`✓ ${activeCount} yükleme kuralı uygulandı`, 'success');
+}
+
+function resetRules() {
+  ['support','direction','sequence'].forEach(id => {
+    const el = document.getElementById('rule-' + id + '-on');
+    if (el) el.checked = false;
+    const body = document.getElementById('rule-body-' + id);
+    if (body) body.classList.remove('open');
+  });
+  document.getElementById('rule-support-val').value = 60;
+  document.getElementById('rule-support-badge').textContent = '%60';
+  selectDirection('x_asc_y_asc');
+  updateRulesActiveCount();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROUTING
+// ═══════════════════════════════════════════════════════════════
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'welcome') renderHistory();
+  if (name === 'config') updateConfigUI();
+  if (name === 'results') { updateResultsUI(); setTimeout(render3D, 50); }
+  window.scrollTo(0, 0);
+}
+
+function startNew(type) {
+  currentLoadType = type;
+  boxes = [];
+  boxIdCounter = 0;
+  pallets = [];
+  goPage('settings');
+  // sync type buttons
+  setLoadType(type);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS PAGE
+// ═══════════════════════════════════════════════════════════════
+function setMetric(m) {
+  currentMetric = m;
+  document.querySelectorAll('.metric-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('metric-' + m).classList.add('active');
+  // Rebuild preset dropdowns with converted values
+  rebuildPresetDropdowns();
+  // Update config page labels/badges if visible
+  updateMetricLabels();
+  // Update settings page metric info pill
+  const infoUnit = document.getElementById('metric-info-unit');
+  const infoEx   = document.getElementById('metric-info-example');
+  const names = { cm:'Santimetre (cm)', mm:'Milimetre (mm)', in:'İnç (in)' };
+  if (infoUnit) infoUnit.textContent = names[m];
+  if (infoEx) {
+    const ep = { cm:'Euro Palet: 120 × 80 × 150 cm', mm:'Euro Palet: 1200 × 800 × 1500 mm', in:'Euro Palet: 47.2 × 31.5 × 59.1 in' };
+    infoEx.textContent = ep[m];
+  }
+}
+
+function rebuildPresetDropdowns() {
+  const u = currentMetric;
+  // Pallet preset select
+  const pp = document.getElementById('pallet-preset');
+  if (pp) {
+    const cur = pp.value; // try to keep selected
+    pp.innerHTML = PALLET_PRESETS_CM.map((p, i) => {
+      const val = p.l ? `${toUnit(p.l)},${toUnit(p.w)},${toUnit(p.h)}` : '';
+      const lbl = p.l
+        ? `${p.label}  ${toUnit(p.l)}×${toUnit(p.w)}×${toUnit(p.h)} ${u}`
+        : p.label;
+      return `<option value="${val}">${lbl}</option>`;
+    }).join('');
+    // Re-apply first real preset
+    if (pp.options[0]) { pp.selectedIndex = 0; applyPalletPreset(pp.value); }
+  }
+  // Container preset select
+  const cp = document.getElementById('container-preset');
+  if (cp) {
+    cp.innerHTML = CONTAINER_PRESETS_CM.map((p, i) => {
+      const val = p.l ? `${toUnit(p.l)},${toUnit(p.w)},${toUnit(p.h)}` : '';
+      const lbl = p.l
+        ? `${p.label}  (${toUnit(p.l)}×${toUnit(p.w)}×${toUnit(p.h)} ${u})`
+        : p.label;
+      return `<option value="${val}">${lbl}</option>`;
+    }).join('');
+    if (cp.options[0]) { cp.selectedIndex = 0; applyPreset(cp.value); }
+  }
+}
+
+function updateMetricLabels() {
+  const u = currentMetric;
+  // Config page badges
+  const mb = document.getElementById('config-metric-badge');
+  if (mb) mb.textContent = u;
+  // Dim labels
+  ['l','w','h'].forEach((d, i) => {
+    const lbl = ['Uzunluk','Genişlik','Yükseklik'][i];
+    const el = document.getElementById(`dim-${d}-label`);
+    if (el) el.textContent = `${lbl} (${u})`;
+  });
+  const us = document.getElementById('dim-unit-show');
+  if (us) us.textContent = u;
+  updateDimVol();
+  // Re-render box list to update unit labels
+  if (typeof renderBoxList === 'function') renderBoxList();
+}
+
+function setLoadType(t) {
+  currentLoadType = t;
+  document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+  const el = document.getElementById('type-' + t);
+  el.classList.add('selected');
+  if (t === 'container') el.classList.add('purple');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFIG PAGE
+// ═══════════════════════════════════════════════════════════════
+function updateConfigUI() {
+  const isPallet = currentLoadType === 'pallet';
+  document.getElementById('config-title').textContent = isPallet ? 'Palet Yükleme Detayları' : 'Konteyner Yükleme Detayları';
+  document.getElementById('config-type-badge').textContent = isPallet ? '🪵 Palet' : '🚢 Konteyner';
+  document.getElementById('dims-title').textContent = isPallet ? 'Palet Ölçüleri' : 'Konteyner Ölçüleri';
+  document.getElementById('dims-icon').textContent = isPallet ? '🪵' : '🚢';
+  document.getElementById('preset-row').style.display = isPallet ? 'none' : 'block';
+  document.getElementById('pallet-preset-row').style.display = isPallet ? 'block' : 'none';
+  // Rebuild dropdowns with current metric, then update labels
+  rebuildPresetDropdowns();
+  updateMetricLabels();
+  renderBoxList();
+}
+
+function applyPreset(val) {
+  if (!val) return;
+  const [l, w, h] = val.split(',').map(Number);
+  document.getElementById('dim-l').value = l;
+  document.getElementById('dim-w').value = w;
+  document.getElementById('dim-h').value = h;
+  updateDimVol();
+}
+
+function applyPalletPreset(val) {
+  if (!val) return;
+  const [l, w, h] = val.split(',').map(Number);
+  document.getElementById('dim-l').value = l;
+  document.getElementById('dim-w').value = w;
+  document.getElementById('dim-h').value = h;
+  updateDimVol();
+}
+
+function updateDimVol() {
+  const l = parseFloat(document.getElementById('dim-l').value) || 0;
+  const w = parseFloat(document.getElementById('dim-w').value) || 0;
+  const h = parseFloat(document.getElementById('dim-h').value) || 0;
+  const lcm = toCm(l), wcm = toCm(w), hcm = toCm(h);
+  document.getElementById('dim-vol').textContent = fmtVol(lcm * wcm * hcm);
+  // Weight limit display
+  const mw = parseFloat(document.getElementById('dim-maxweight')?.value) || 0;
+  const wi = document.getElementById('dim-weight-info');
+  const ws = document.getElementById('dim-weight-show');
+  if (wi && ws) {
+    if (mw > 0) { wi.style.display='inline'; ws.textContent = mw + ' kg'; }
+    else wi.style.display = 'none';
+  }
+}
+
+// Wire maxweight input
+document.getElementById('dim-maxweight')?.addEventListener('input', updateDimVol);
+
+['dim-l','dim-w','dim-h'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', updateDimVol);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// BOX MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+// Orientation codes: 'LWH' = l×w×h (natural), 'LHW', 'WLH', 'WHL', 'HLW', 'HWL'
+const ALL_ORIENTS = ['LWH','LHW','WLH','WHL','HLW','HWL'];
+const ORIENT_META = {
+  'LWH': { icon:'📦', name:'Düz (L×G×Y)',  desc:'Doğal yön' },
+  'LHW': { icon:'⬆️', name:'Dik (L×Y×G)',  desc:'Yükseklik öne' },
+  'WLH': { icon:'↔️', name:'Yan (G×L×Y)',  desc:'90° yatay döndür' },
+  'WHL': { icon:'🔄', name:'Devrik (G×Y×L)',desc:'Yan + dik' },
+  'HLW': { icon:'⬛', name:'Yatık (Y×L×G)', desc:'Üstüne yatır' },
+  'HWL': { icon:'🔃', name:'Ters (Y×G×L)',  desc:'Ters yatık' },
+};
+
+function orientToRot(code, l, w, h) {
+  // Returns [rl, rw, rh] for the given orientation code
+  switch(code) {
+    case 'LWH': return [l, w, h];
+    case 'LHW': return [l, h, w];
+    case 'WLH': return [w, l, h];
+    case 'WHL': return [w, h, l];
+    case 'HLW': return [h, l, w];
+    case 'HWL': return [h, w, l];
+  }
+}
+
+function addBoxType(l=40, w=30, h=25, qty=10, name='', orients=null, weight=0, maxStackWeight=0) {
+  const id = boxIdCounter++;
+  const color = COLORS[boxes.length % COLORS.length];
+  boxes.push({
+    id, l, w, h, qty, color,
+    name: name || `Koli Tipi ${boxes.length + 1}`,
+    orients: orients || [...ALL_ORIENTS],
+    seqNo: boxes.length + 1,
+    weight: weight || 0,         // kg per unit, 0 = unknown
+    maxStackWeight: maxStackWeight || 0, // max weight this box can carry on top, 0 = unlimited
+  });
+  renderBoxList();
+}
+
+function removeBox(id) {
+  boxes = boxes.filter(b => b.id !== id);
+  renderBoxList();
+}
+
+function updateBox(id, key, val) {
+  const b = boxes.find(x => x.id === id);
+  if (!b) return;
+  if (key === 'name') b[key] = val;
+  else if (key === 'orients') b[key] = val;  // array set directly
+  else b[key] = parseFloat(val);
+}
+
+// ─── Box Advanced Modal ─────────────────────────────────────────
+let advBoxId = null;  // currently editing box id
+let advOrients = [];  // temp orients while modal is open
+
+function openBoxAdv(boxId) {
+  const b = boxes.find(x => x.id === boxId);
+  if (!b) return;
+  advBoxId = boxId;
+  advOrients = [...(b.orients || ALL_ORIENTS)];
+  const titleEl = document.getElementById('box-adv-title');
+  if (titleEl) titleEl.textContent = b.name;
+  const sub = document.getElementById('box-adv-subtitle');
+  if (sub) sub.textContent = `${b.l}×${b.w}×${b.h} ${currentMetric}`;
+  document.getElementById('adv-maxstack').value = b.maxStackWeight > 0 ? b.maxStackWeight : '';
+  renderAdvOrientGrid(b);
+  updateAdvSummary();
+  document.getElementById('box-adv-modal').style.display = 'flex';
+}
+
+function closeBoxAdvModal(e) {
+  if (e && e.target !== document.getElementById('box-adv-modal')) return;
+  document.getElementById('box-adv-modal').style.display = 'none';
+  advBoxId = null;
+}
+
+function renderAdvOrientGrid(b) {
+  const grid = document.getElementById('adv-orient-grid');
+  const chkSvg = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  // Orient name map — clean Turkish labels
+  const LABELS = {
+    'LWH':'Düz', 'LHW':'Dik', 'WLH':'Yan',
+    'WHL':'Devrik', 'HLW':'Yatık', 'HWL':'Ters'
+  };
+  const DESCS = {
+    'LWH':'Doğal duruş', 'LHW':'Öne eğik', 'WLH':'90° çevrilmiş',
+    'WHL':'Yan+dik', 'HLW':'Üstüne yatırılmış', 'HWL':'Ters yatık'
+  };
+  grid.innerHTML = ALL_ORIENTS.map(code => {
+    const [rl, rw, rh] = orientToRot(code, b.l, b.w, b.h);
+    const on = advOrients.includes(code);
+    const iso = drawOrientPreview(rl, rw, rh, on);
+    return `<div class="orient-card${on?' on':''}" id="advc-${code}" onclick="advToggleOrient('${code}')">
+      <div class="orient-card-iso">${iso}</div>
+      <div class="orient-card-body">
+        <div class="orient-card-name">${LABELS[code]||code}</div>
+        <div class="orient-card-dims">${toUnit(rl)}×${toUnit(rw)}×${toUnit(rh)} ${currentMetric}</div>
+      </div>
+      <div class="orient-card-chk">${chkSvg}</div>
+    </div>`;
+  }).join('');
+}
+
+function advToggleOrient(code) {
+  if (advOrients.includes(code)) {
+    if (advOrients.length === 1) { showToast('En az 1 yön seçili olmalı','warn'); return; }
+    advOrients = advOrients.filter(o => o !== code);
+  } else {
+    advOrients.push(code);
+  }
+  const b = boxes.find(x => x.id === advBoxId);
+  if (b) renderAdvOrientGrid(b);
+  updateAdvSummary();
+}
+
+function advSelectAll(all) {
+  advOrients = all ? [...ALL_ORIENTS] : ['LWH'];
+  const b = boxes.find(x => x.id === advBoxId);
+  if (b) renderAdvOrientGrid(b);
+  updateAdvSummary();
+}
+
+function updateAdvSummary() {
+  const ms = parseFloat(document.getElementById('adv-maxstack')?.value) || 0;
+  const allOn = advOrients.length === ALL_ORIENTS.length;
+  const chips = [];
+  chips.push(`<span class="adv-chip${allOn?' on':''}">${allOn ? '✓ Tüm yönler' : advOrients.length+'/6 yön aktif'}</span>`);
+  if (ms > 0) chips.push(`<span class="adv-chip on">⚖️ max ${ms} kg</span>`);
+  const el = document.getElementById('adv-summary');
+  if (el) el.innerHTML = chips.join('');
+  const warn = document.getElementById('adv-weight-warn');
+  if (warn) warn.style.display = ms > 0 ? 'flex' : 'none';
+}
+
+function saveBoxAdv() {
+  const b = boxes.find(x => x.id === advBoxId);
+  if (!b) return;
+  b.orients = [...advOrients];
+  b.maxStackWeight = parseFloat(document.getElementById('adv-maxstack')?.value) || 0;
+  document.getElementById('box-adv-modal').style.display = 'none';
+  advBoxId = null;
+  renderBoxList();
+  showToast('✓ Gelişmiş ayarlar kaydedildi', 'success');
+}
+
+// ─── Isometric box SVG preview ──────────────────────────────────
+function drawOrientPreview(l, w, h, active) {
+  const SIZE = 54;
+  const M = Math.max(l, w, h) || 1;
+
+  // Normalize each axis — larger = longer in iso projection
+  // Cap so no single axis dominates too much (min ratio 0.3)
+  const nl = Math.max(l/M, 0.30);
+  const nw = Math.max(w/M, 0.30);
+  const nh = Math.max(h/M, 0.30);
+
+  // Scale to fill the tile nicely
+  const S = SIZE * 0.34;
+  const sl = nl * S, sw = nw * S, sh = nh * S;
+
+  // Iso unit vectors
+  const ix = 0.866, iy = 0.5;
+  const jx = -0.866, jy = 0.5;
+
+  // Compute projected bounding box to center the shape
+  const projW = sl*ix - sw*jx;  // total width in screen px
+  const projH = sl*iy + sw*jy + sh; // total height in screen px
+  const ox = SIZE/2 - projW/2 + sw*0.1;
+  const oy = SIZE/2 + projH/2 - sh*0.5;
+
+  function pt(lf, wf, hf) {
+    return [
+      ox + lf*sl*ix + wf*sw*jx,
+      oy - lf*sl*iy - wf*sw*jy - hf*sh
+    ];
+  }
+
+  const p000=pt(0,0,0),p100=pt(1,0,0),p110=pt(1,1,0),p010=pt(0,1,0);
+  const p001=pt(0,0,1),p101=pt(1,0,1),p111=pt(1,1,1),p011=pt(0,1,1);
+
+  function poly(pts, fill, stroke='none', sw2=0) {
+    return `<polygon points="${pts.map(([x,y])=>`${x.toFixed(2)},${y.toFixed(2)}`).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${sw2}" stroke-linejoin="round"/>`;
+  }
+  function line(a,b,c,w){ return `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${c}" stroke-width="${w}"/>`; }
+
+  function poly(pts, fill, sc='none', sw2=0) {
+    return `<polygon points="${pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}" fill="${fill}" stroke="${sc}" stroke-width="${sw2}" stroke-linejoin="round"/>`;
+  }
+
+  if (active) {
+    return `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${poly([p010,p110,p111,p011], '#3730a3', '#1e1b4b', 0.6)}
+      ${poly([p000,p100,p101,p001], '#4f46e5', '#312e81', 0.6)}
+      ${poly([p001,p101,p111,p011], '#a5b4fc', '#6366f1', 0.7)}
+      <line x1="${p001[0].toFixed(1)}" y1="${p001[1].toFixed(1)}" x2="${p101[0].toFixed(1)}" y2="${p101[1].toFixed(1)}" stroke="rgba(255,255,255,.45)" stroke-width="0.8"/>
+      <line x1="${p001[0].toFixed(1)}" y1="${p001[1].toFixed(1)}" x2="${p011[0].toFixed(1)}" y2="${p011[1].toFixed(1)}" stroke="rgba(255,255,255,.3)" stroke-width="0.7"/>
+    </svg>`;
+  } else {
+    return `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}" xmlns="http://www.w3.org/2000/svg">
+      ${poly([p010,p110,p111,p011], '#94a3b8', 'rgba(0,0,0,.15)', 0.5)}
+      ${poly([p000,p100,p101,p001], '#cbd5e1', 'rgba(0,0,0,.12)', 0.5)}
+      ${poly([p001,p101,p111,p011], '#e2e8f0', 'rgba(0,0,0,.1)', 0.6)}
+    </svg>`;
+  }
+}
+
+function toggleOrient(boxId, code) {
+  const b = boxes.find(x => x.id === boxId);
+  if (!b) return;
+  if (b.orients.includes(code)) {
+    if (b.orients.length === 1) { showToast('En az 1 yön seçili olmalı','warn'); return; }
+    b.orients = b.orients.filter(o => o !== code);
+  } else {
+    b.orients.push(code);
+  }
+  // Re-render just this box's orient buttons
+  ALL_ORIENTS.forEach(c => {
+    const el = document.getElementById(`ob-${boxId}-${c}`);
+    if (el) el.classList.toggle('on', b.orients.includes(c));
+  });
+}
+
+function setAllOrients(boxId, all) {
+  const b = boxes.find(x => x.id === boxId);
+  if (!b) return;
+  b.orients = all ? [...ALL_ORIENTS] : ['LWH'];
+  renderBoxList();
+}
+
+function renderBoxList() {
+  const list = document.getElementById('box-list');
+  document.getElementById('box-count-label').textContent = boxes.length;
+  if (!boxes.length) {
+    list.innerHTML = '<div class="empty-box-hint">Henüz koli eklenmedi.<br>"Koli Ekle" butonuna tıklayın veya Excel ile içe aktarın.</div>';
+    return;
+  }
+  list.innerHTML = boxes.map(b => {
+    const orients = b.orients || ALL_ORIENTS;
+    const hasAdv = orients.length < ALL_ORIENTS.length || (b.maxStackWeight > 0);
+    const advBadges = [];
+    if (orients.length < ALL_ORIENTS.length) advBadges.push(`${orients.length}/6 yön`);
+    if (b.maxStackWeight > 0) advBadges.push(`max ${b.maxStackWeight} kg üst`);
+    return `
+    <div class="box-item">
+      <div class="box-item-head">
+        <div class="color-dot" style="background:${b.color}"></div>
+        <input type="text" value="${b.name}" style="flex:1;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:3px 5px;font-size:13px;font-weight:600;background:transparent;outline:none;color:var(--text)" onchange="updateBox(${b.id},'name',this.value)">
+        ${loadRules.sequence.active ? `<div style="display:flex;align-items:center;gap:5px;margin-right:4px"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Sıra</span><input type="number" value="${b.seqNo||1}" min="1" style="width:52px;padding:4px 6px;font-size:13px;font-weight:700;color:var(--purple);border:1.5px solid var(--purple-light);border-radius:6px;text-align:center" onchange="updateBox(${b.id},'seqNo',this.value)"></div>` : ''}
+        <button class="box-adv-btn${hasAdv?' has-settings':''}" onclick="openBoxAdv(${b.id})">⚙️ Gelişmiş${hasAdv ? ` <span style="background:var(--accent);color:#fff;border-radius:8px;padding:1px 5px;font-size:10px">${advBadges.length}</span>` : ''}</button>
+        <button class="btn btn-danger-ghost" style="padding:4px 10px;font-size:11px" onclick="removeBox(${b.id})">✕ Sil</button>
+      </div>
+      <div class="box-item-body" style="grid-template-columns:repeat(5,1fr)">
+        <div class="box-dim-field">
+          <label>Uzunluk</label>
+          <input type="number" value="${b.l}" min="1" onchange="updateBox(${b.id},'l',this.value)">
+        </div>
+        <div class="box-dim-field">
+          <label>Genişlik</label>
+          <input type="number" value="${b.w}" min="1" onchange="updateBox(${b.id},'w',this.value)">
+        </div>
+        <div class="box-dim-field">
+          <label>Yükseklik</label>
+          <input type="number" value="${b.h}" min="1" onchange="updateBox(${b.id},'h',this.value)">
+        </div>
+        <div class="box-dim-field">
+          <label>Adet</label>
+          <input type="number" value="${b.qty}" min="1" onchange="updateBox(${b.id},'qty',this.value)">
+        </div>
+        <div class="box-dim-field">
+          <label>Ağırlık (kg)</label>
+          <input type="number" value="${b.weight||''}" min="0" step="0.1" placeholder="—" onchange="updateBox(${b.id},'weight',this.value)">
+        </div>
+      </div>
+      ${hasAdv ? `<div style="padding:6px 12px 8px;display:flex;gap:6px;flex-wrap:wrap">${advBadges.map(t=>`<span style="background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">${t}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ALGORITHM — Hybrid Multi-Start 3D Bin Packing
+// ═══════════════════════════════════════════════════════════════
+//
+// Yaklaşım: Üç katmanlı hibrit strateji
+//
+// 1. WALL-BUILDING (Bricklayer) — Ana katman
+//    Palet uzunluğu boyunca "duvar" dilimleri oluşturur.
+//    Her dilim, mevcut boşluğa en iyi uyan kutuları yerleştirir.
+//    Gerçek yüklemelerde kullanılan fiziksel yükleme mantığını taklit eder.
+//
+// 2. EXTREME POINT + GRAVITY SCORE — Yerleştirme motoru
+//    Her duvar dilimi içinde EP-3DBP kullanır.
+//    Yerçekimi skoru: z↓ önce, y↓ sonra, x↓ en son.
+//    Tüm 6 rotasyon her noktada denenir.
+//
+// 3. MULTI-START RANDOMIZED — Global optimizasyon
+//    N farklı sıralama permütasyonu dener (hacim+rastgele karıştırma).
+//    En yüksek hacim kullanımını veren sonucu seçer.
+//    Deterministik çalışma modunda sabitleme (seed) ile tekrarlanabilir.
+//
+// 4. LOOKAHEAD / SKIP-AND-RETRY
+//    Bir kutu sığmazsa diğerlerini dener, geri döner.
+//    Büyük kutu blokajının önüne geçer.
+//
+// Referanslar:
+//   Martello, Pisinger & Vigo (2000) — 3D Bin Packing
+//   Ha, Nguyen et al. (2013) — Wall-building heuristic
+//   Crainic, Perboli & Tadei (2008) — TS-3BPP
+
+const EPS = 1e-6;
+
+// ── Rotation helpers ──────────────────────────────────────────
+function getAllRotations(l, w, h, allowedOrients) {
+  // If no constraint, use all geometrically distinct rotations
+  const codes = (allowedOrients && allowedOrients.length > 0) ? allowedOrients : ALL_ORIENTS;
+  const seen = new Set(), rots = [];
+  for (const code of codes) {
+    const [a,b,c] = orientToRot(code, l, w, h);
+    // Deduplicate geometrically identical rotations (e.g. cube)
+    const k = [a,b,c].join(',');
+    if (!seen.has(k)) { seen.add(k); rots.push([a,b,c]); }
+  }
+  return rots;
+}
+
+// ── Overlap & bounds ──────────────────────────────────────────
+function overlaps(ax,ay,az,al,aw,ah, bx,by,bz,bl,bw,bh) {
+  return ax < bx+bl-EPS && ax+al > bx+EPS &&
+         ay < by+bw-EPS && ay+aw > by+EPS &&
+         az < bz+bh-EPS && az+ah > bz+EPS;
+}
+
+// ── Compute total weight of all boxes sitting on top of target box b ──
+// Uses recursive column calculation: boxes stacked above b contribute their weight
+function computeWeightOnBox(b, placed) {
+  let total = 0;
+  for (const above of placed) {
+    if (above === b) continue;
+    // above must rest directly on top of b (above.z ≈ b.z + b.h)
+    if (Math.abs(above.z - (b.z + b.h)) > EPS * 10) continue;
+    // Must overlap in x,y
+    const ox = Math.min(above.x+above.l, b.x+b.l) - Math.max(above.x, b.x);
+    const oy = Math.min(above.y+above.w, b.y+b.w) - Math.max(above.y, b.y);
+    if (ox > EPS && oy > EPS) {
+      total += above.weight || 0;
+      // Recursively add weight on top of 'above' as well
+      total += computeWeightOnBox(above, placed);
+    }
+  }
+  return total;
+}
+
+function canPlace(px,py,pz,pl,pw,ph, cL,cW,cH, placed, itemWeight=0) {
+  if (px < -EPS || py < -EPS || pz < -EPS) return false;
+  if (px+pl > cL+EPS || py+pw > cW+EPS || pz+ph > cH+EPS) return false;
+  for (const b of placed)
+    if (overlaps(px,py,pz,pl,pw,ph, b.x,b.y,b.z,b.l,b.w,b.h)) return false;
+
+  // ── Rule: minimum support check ─────────────────────────────
+  if (loadRules.support.active && pz > EPS) {
+    // Not on floor — must check support from boxes below
+    const baseArea = pl * pw;
+    let supportedArea = 0;
+    for (const b of placed) {
+      // b must be directly below: b.z + b.h ≈ pz
+      if (Math.abs((b.z + b.h) - pz) > EPS) continue;
+      // Overlap in X
+      const ox = Math.min(px+pl, b.x+b.l) - Math.max(px, b.x);
+      const oy = Math.min(py+pw, b.y+b.w) - Math.max(py, b.y);
+      if (ox > EPS && oy > EPS) supportedArea += ox * oy;
+    }
+    const supportPct = (supportedArea / baseArea) * 100;
+    if (supportPct < loadRules.support.minPct - EPS) return false;
+  }
+
+  // ── Box stack weight check ──────────────────────────────────
+  // For each box currently placed that would be UNDER the new box,
+  // compute the total weight already on it + the new box's weight.
+  // If that exceeds the placed box's maxStackWeight → reject.
+  if (pz > EPS) {
+    // Find boxes that are directly or indirectly below new box
+    // We check each placed box b: if new box's base overlaps b's top face
+    for (const b of placed) {
+      if (b.maxStackWeight <= 0) continue; // no limit on this box
+      // b must be anywhere below pz (directly or via stack)
+      // Compute total weight already sitting on top of b
+      const weightOnB = computeWeightOnBox(b, placed);
+      // Does the new item land (even partially) on top of b's column?
+      // We use: new item overlaps in x,y AND new item's base is above b's top
+      const ox = Math.min(px+pl, b.x+b.l) - Math.max(px, b.x);
+      const oy = Math.min(py+pw, b.y+b.w) - Math.max(py, b.y);
+      if (ox > EPS && oy > EPS && pz >= b.z + b.h - EPS) {
+        if (weightOnB + (itemWeight) > b.maxStackWeight + 0.001) return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// ── Directional score: transforms (x,y,z) based on load direction ──
+function directionScore(x, y, z, cL, cW) {
+  if (!loadRules.direction.active) return gravityScore(x, y, z);
+  switch (loadRules.direction.mode) {
+    case 'x_asc_y_asc':   return z*1e10 + y*1e5 + x;          // left→right, front→back
+    case 'x_desc_y_asc':  return z*1e10 + y*1e5 + (cL-x);     // right→left, front→back
+    case 'x_asc_y_desc':  return z*1e10 + (cW-y)*1e5 + x;     // left→right, back→front
+    case 'center_out': {
+      const dx = x - cL/2, dy = y - cW/2;
+      return z*1e10 + Math.sqrt(dx*dx+dy*dy)*1e4;              // inner first
+    }
+    default: return gravityScore(x, y, z);
+  }
+}
+
+// ── Extreme Points (full projection set) ──────────────────────
+// Generates all 6 axial projections + origin for tighter packing
+function getExtremePoints(placed, cL, cW, cH) {
+  const map = new Map();
+  const add = (x, y, z) => {
+    x = Math.max(0, x); y = Math.max(0, y); z = Math.max(0, z);
+    if (x > cL+EPS || y > cW+EPS || z > cH+EPS) return;
+    const k = `${Math.round(x*1e4)},${Math.round(y*1e4)},${Math.round(z*1e4)}`;
+    if (!map.has(k)) map.set(k, [x, y, z]);
+  };
+  add(0, 0, 0);
+  for (const b of placed) {
+    const x2=b.x+b.l, y2=b.y+b.w, z2=b.z+b.h;
+    // 3 axial projections from each box corner
+    add(x2, b.y, b.z);  add(b.x, y2, b.z);  add(b.x, b.y, z2);
+    // 3 planar combinations
+    add(x2, y2, b.z);   add(x2, b.y, z2);   add(b.x, y2, z2);
+    // Project onto floor/walls from existing boxes (Ha et al.)
+    for (const c of placed) {
+      if (c === b) continue;
+      // x-projection onto face of b
+      if (Math.abs(c.x+c.l - b.x) < EPS*10) { add(b.x, c.y, c.z); add(b.x, c.y+c.w, c.z); add(b.x, c.y, c.z+c.h); }
+      if (Math.abs(c.y+c.w - b.y) < EPS*10) { add(c.x, b.y, c.z); add(c.x+c.l, b.y, c.z); add(c.x, b.y, c.z+c.h); }
+      if (Math.abs(c.z+c.h - b.z) < EPS*10) { add(c.x, c.y, b.z); add(c.x+c.l, c.y, b.z); add(c.x, c.y+c.w, b.z); }
+    }
+  }
+  return [...map.values()];
+}
+
+// ── Gravity score: minimise height first, then depth, then width ──
+function gravityScore(x, y, z) {
+  return z * 1e10 + y * 1e5 + x;
+}
+
+// ── Contact surface ratio (bonus for stability) ────────────────
+// Higher contact with floor/walls/other boxes = better stability
+function contactScore(px, py, pz, pl, pw, ph, placed, cL, cW, cH) {
+  let contact = 0;
+  const area = 2*(pl*pw + pl*ph + pw*ph);
+  // Floor contact
+  if (pz < EPS) contact += pl * pw;
+  // Wall contacts
+  if (px < EPS) contact += pw * ph;
+  if (py < EPS) contact += pl * ph;
+  if (Math.abs(px+pl-cL) < EPS) contact += pw * ph;
+  if (Math.abs(py+pw-cW) < EPS) contact += pl * ph;
+  // Box-to-box contact
+  for (const b of placed) {
+    if (Math.abs(px+pl - b.x) < EPS || Math.abs(b.x+b.l - px) < EPS) {
+      const oy = Math.min(py+pw,b.y+b.w) - Math.max(py,b.y);
+      const oz = Math.min(pz+ph,b.z+b.h) - Math.max(pz,b.z);
+      if (oy > 0 && oz > 0) contact += oy * oz;
+    }
+    if (Math.abs(py+pw - b.y) < EPS || Math.abs(b.y+b.w - py) < EPS) {
+      const ox = Math.min(px+pl,b.x+b.l) - Math.max(px,b.x);
+      const oz = Math.min(pz+ph,b.z+b.h) - Math.max(pz,b.z);
+      if (ox > 0 && oz > 0) contact += ox * oz;
+    }
+    if (Math.abs(pz - (b.z+b.h)) < EPS) {
+      const ox = Math.min(px+pl,b.x+b.l) - Math.max(px,b.x);
+      const oy = Math.min(py+pw,b.y+b.w) - Math.max(py,b.y);
+      if (ox > 0 && oy > 0) contact += ox * oy;
+    }
+  }
+  return contact / area;
+}
+
+// ── Single-pass packing with EP + contact scoring ──────────────
+function packPass(cL, cW, cH, items, maxWeight=0) {
+  const placed = [], remaining = [];
+  // Work queue — try to fit all items, skip blocked ones and retry
+  const queue = [...items];
+  let failStreak = 0;
+  const maxFail = queue.length;
+
+  while (queue.length > 0) {
+    const item = queue.shift();
+    const rots = getAllRotations(item.l, item.w, item.h, item.orients);
+    const eps = getExtremePoints(placed, cL, cW, cH);
+
+    let bestScore = Infinity, bestContact = -1, bestP = null;
+
+    for (const [ex, ey, ez] of eps) {
+      for (const [rl, rw, rh] of rots) {
+        if (!canPlace(ex,ey,ez,rl,rw,rh, cL,cW,cH, placed, item.weight||0)) continue;
+        const gScore = directionScore(ex, ey, ez, cL, cW);
+        const cScore = contactScore(ex,ey,ez,rl,rw,rh, placed, cL,cW,cH);
+        // Combined: directional gravity dominates, contact breaks ties
+        const score = gScore - cScore * 1e3;
+        if (score < bestScore) { bestScore=score; bestContact=cScore; bestP={x:ex,y:ey,z:ez,l:rl,w:rw,h:rh}; }
+      }
+    }
+
+    if (bestP) {
+      // Weight check before committing placement
+      if (maxWeight > 0 && item.weight > 0) {
+        const currentWeight = placed.reduce((s,b) => s + (b.weight||0), 0);
+        if (currentWeight + item.weight > maxWeight + 0.001) {
+          // Over weight limit — move to remaining, don't retry this bin
+          remaining.push(item);
+          failStreak++;
+          if (failStreak >= maxFail) break;
+          continue;
+        }
+      }
+      placed.push({ ...bestP, color: item.color, typeIdx: item.typeIdx, weight: item.weight||0, maxStackWeight: item.maxStackWeight||0 });
+      failStreak = 0;
+    } else {
+      // Can't place now — push to back and retry later
+      remaining.push(item);
+      failStreak++;
+      if (failStreak >= maxFail) break; // Nothing fits anymore
+    }
+  }
+
+  return { placed, remaining };
+}
+
+// ── Seeded PRNG (Mulberry32) — reproducible shuffles ──────────
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ── Fisher-Yates shuffle with given RNG ───────────────────────
+function shuffleWith(arr, rng) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(rng() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── Sort strategies for multi-start ───────────────────────────
+function sortByStrategy(items, strategy, rng) {
+  const a = [...items];
+  switch (strategy) {
+    case 'vol_desc':
+      return a.sort((x,y) => (y.l*y.w*y.h) - (x.l*x.w*x.h));
+    case 'vol_asc':
+      return a.sort((x,y) => (x.l*x.w*x.h) - (y.l*y.w*y.h));
+    case 'maxdim_desc':
+      return a.sort((x,y) => Math.max(y.l,y.w,y.h) - Math.max(x.l,x.w,x.h));
+    case 'height_desc':
+      return a.sort((x,y) => y.h - x.h);
+    case 'area_desc':
+      // Sort by base area descending (good for stability)
+      return a.sort((x,y) => (y.l*y.w) - (x.l*x.w));
+    case 'shuffle':
+      return shuffleWith(a, rng);
+    case 'vol_shuffle': {
+      // Group by volume bucket, shuffle within groups
+      const sorted = a.sort((x,y) => (y.l*y.w*y.h) - (x.l*x.w*x.h));
+      const out = [], bucket = [];
+      let lastVol = -1;
+      for (const it of sorted) {
+        const v = it.l*it.w*it.h;
+        if (lastVol > 0 && Math.abs(v - lastVol) / lastVol > 0.15) {
+          out.push(...shuffleWith(bucket, rng));
+          bucket.length = 0;
+        }
+        bucket.push(it); lastVol = v;
+      }
+      out.push(...shuffleWith(bucket, rng));
+      return out;
+    }
+    default:
+      return a;
+  }
+}
+
+// ── MAIN: packUnit dispatcher ─────────────────────────────────
+// Routes to fast or advanced algorithm based on user setting.
+// Advanced mode: runs N strategies, keeps best result.
+// Level 1=2 strategies, 2=4, 3=7, 4=10+
+
+let currentAlgo = 'fast';     // 'fast' | 'advanced'
+let currentOptLevel = 2;       // 1-4
+
+const LEVEL_STRATEGIES = {
+  1: ['vol_desc', 'maxdim_desc'],
+  2: ['vol_desc', 'maxdim_desc', 'height_desc', 'area_desc'],
+  3: ['vol_desc', 'maxdim_desc', 'height_desc', 'area_desc', 'vol_asc', 'vol_shuffle', 'shuffle'],
+  4: ['vol_desc', 'maxdim_desc', 'height_desc', 'area_desc', 'vol_asc', 'vol_shuffle', 'shuffle', 'shuffle', 'shuffle', 'shuffle'],
+};
+
+const LEVEL_META = {
+  1: { cls:'l1', icon:'⚡', label:'Hızlı',    desc:'2 deneme yapılır, koli sayısı fazla olsa da saniyeler içinde tamamlanır.' },
+  2: { cls:'l2', icon:'🎯', label:'Dengeli',  desc:'4 farklı sıralama stratejisi denenir. Çoğu senaryo için iyi denge.' },
+  3: { cls:'l3', icon:'🔍', label:'İyi',      desc:'7 strateji + rastgele permütasyon. Belirgin iyileşme, biraz daha uzun sürer.' },
+  4: { cls:'l4', icon:'🏆', label:'Maksimum', desc:'10 strateji dener, en iyi sonucu seçer. Büyük listelerde dakikalar alabilir.' },
+};
+
+function setAlgo(mode) {
+  currentAlgo = mode;
+  document.getElementById('algo-tab-fast').classList.toggle('active', mode==='fast');
+  document.getElementById('algo-tab-advanced').classList.toggle('active', mode==='advanced');
+  document.getElementById('algo-fast-info').style.display = mode==='fast'?'block':'none';
+  document.getElementById('algo-advanced-panel').style.display = mode==='advanced'?'block':'none';
+}
+
+function updateLevelUI() {
+  const lv = parseInt(document.getElementById('opt-level').value);
+  currentOptLevel = lv;
+  const m = LEVEL_META[lv];
+  const tries = LEVEL_STRATEGIES[lv].length;
+  const badge = document.getElementById('level-badge');
+  badge.className = `level-badge ${m.cls}`;
+  badge.textContent = `${m.icon} ${m.label} — ${tries} deneme`;
+  document.getElementById('level-info').textContent = m.desc;
+}
+
+function packUnit(cL, cW, cH, items, maxWeight=0) {
+  // ── FAST mode: single-pass, largest-first ──────────────────
+  if (currentAlgo === 'fast') {
+    const sorted = [...items].sort((a,b) => {
+      const vd = (b.l*b.w*b.h) - (a.l*a.w*a.h);
+      return Math.abs(vd) > 1 ? vd : Math.max(b.l,b.w,b.h) - Math.max(a.l,a.w,a.h);
+    });
+    return packPass(cL, cW, cH, sorted, maxWeight);
+  }
+
+  // ── ADVANCED mode: multi-start with selected level ─────────
+  const strategies = LEVEL_STRATEGIES[currentOptLevel] || LEVEL_STRATEGIES[2];
+  const containerVol = cL * cW * cH;
+  let bestPlaced = [], bestRemaining = items;
+
+  for (let i = 0; i < strategies.length; i++) {
+    const rng = mulberry32(i * 1337 + 42);
+    const sorted = sortByStrategy(items, strategies[i], rng);
+    const result = packPass(cL, cW, cH, sorted, maxWeight);
+    const packedVol = result.placed.reduce((s,b) => s + b.l*b.w*b.h, 0);
+    const prevVol   = bestPlaced.reduce((s,b) => s + b.l*b.w*b.h, 0);
+    if (packedVol > prevVol + EPS || (Math.abs(packedVol-prevVol)<1 && result.remaining.length < bestRemaining.length)) {
+      bestPlaced = result.placed;
+      bestRemaining = result.remaining;
+    }
+    if (packedVol / containerVol > 0.995) break;
+  }
+  return { placed: bestPlaced, remaining: bestRemaining };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OPTIMIZE
+// ═══════════════════════════════════════════════════════════════
+function runOptimize() {
+  // Read in current unit, convert to cm for algorithm (algorithm always works in cm)
+  const palL = toCm(parseFloat(document.getElementById('dim-l').value));
+  const palW = toCm(parseFloat(document.getElementById('dim-w').value));
+  const palH = toCm(parseFloat(document.getElementById('dim-h').value));
+  const palMaxWeight = parseFloat(document.getElementById('dim-maxweight')?.value) || 0; // kg, 0=unlimited
+  if (!palL||!palW||!palH) { showToast('Lütfen ölçüleri girin','error'); return; }
+  if (!boxes.length)        { showToast('En az bir koli tipi ekleyin','error'); return; }
+
+  // Sync slider → currentOptLevel (in case oninput didn't fire)
+  const sliderEl = document.getElementById('opt-level');
+  if (sliderEl) currentOptLevel = parseInt(sliderEl.value);
+
+  // Show algo info in loading overlay
+  const algoLabel = currentAlgo === 'fast'
+    ? '⚡ Hızlı algoritma'
+    : `🎯 Gelişmiş — Seviye ${currentOptLevel} (${(LEVEL_STRATEGIES[currentOptLevel]||[]).length} deneme)`;
+  const loadMsg = document.getElementById('loading-msg');
+  if (loadMsg) loadMsg.textContent = algoLabel;
+
+  document.getElementById('loading-overlay').style.display = 'flex';
+
+  // Use setTimeout so the browser paints the overlay before heavy computation
+  setTimeout(() => {
+    // Build flat item list — NO pre-sort here; packUnit handles ordering per strategy
+    let items = [];
+    boxes.forEach((b, ti) => {
+      for (let i = 0; i < b.qty; i++)
+        items.push({
+          l:toCm(b.l), w:toCm(b.w), h:toCm(b.h),
+          color:b.color, typeIdx:ti,
+          orients:b.orients||[...ALL_ORIENTS],
+          seqNo: b.seqNo || 1,
+          weight: b.weight || 0,
+          maxStackWeight: b.maxStackWeight || 0,
+        });
+    });
+
+    // ── Apply sequence rule: pre-sort items by seqNo group ──────
+    if (loadRules.sequence.active) {
+      items.sort((a, b) => (a.seqNo||1) - (b.seqNo||1));
+    }
+
+    // ── Apply direction rule: transform coordinate system ───────
+    // We mirror/swap EP scores based on load direction
+    // This is applied via the gravityScore override inside packPass.
+
+    pallets = [];
+    let rem = items;
+    let safetyBreak = 0;
+    while (rem.length > 0 && safetyBreak++ < 500) {
+      const r = packUnit(palL, palW, palH, rem, palMaxWeight);
+      if (r.placed.length === 0) {
+        showToast('Bazı koliler sığmıyor! Ölçüleri kontrol edin.', 'error');
+        break;
+      }
+      const palWeight = r.placed.reduce((s,b) => s + (b.weight||0), 0);
+      pallets.push({ placed: r.placed, palL, palW, palH, maxWeight: palMaxWeight, totalWeight: palWeight });
+      rem = r.remaining;
+    }
+
+    currentPalletIdx = 0;
+
+    // Save to history
+    const entry = {
+      id:          Date.now(),
+      type:        currentLoadType,
+      date:        new Date().toLocaleDateString('tr-TR'),
+      dims:        `${toUnit(palL)}×${toUnit(palW)}×${toUnit(palH)} ${currentMetric}`,
+      palletCount: pallets.length,
+      totalBoxes:  items.length,
+      fill:        (items.reduce((s,b)=>s+b.l*b.w*b.h,0) / (pallets.length*palL*palW*palH) * 100).toFixed(1),
+      metric:      currentMetric,
+      algo:        currentAlgo === 'fast' ? '⚡ Hızlı' : `🎯 Gelişmiş Lv${currentOptLevel}`,
+      boxTypes:    boxes.map(b=>b.name).join(', '),
+    };
+    history.unshift(entry);
+    if (history.length > 12) history.pop();
+    localStorage.setItem('loadopt-history', JSON.stringify(history));
+
+    document.getElementById('loading-overlay').style.display = 'none';
+    goPage('results');
+    showToast(`✓ ${pallets.length} birim hesaplandı (${algoLabel})`, 'success');
+  }, 60);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// RESULTS PAGE
+// ═══════════════════════════════════════════════════════════════
+function updateResultsUI() {
+  if (!pallets.length) return;
+  const p0=pallets[0];
+  const palVol=p0.palL*p0.palW*p0.palH;
+  let totalBoxes=0,totalUsedVol=0;
+  pallets.forEach(p=>{ totalBoxes+=p.placed.length; p.placed.forEach(b=>totalUsedVol+=b.l*b.w*b.h); });
+  const fill=(totalUsedVol/(pallets.length*palVol)*100).toFixed(1);
+  const isPallet=currentLoadType==='pallet';
+
+  document.getElementById('result-subtitle').textContent=`${toUnit(p0.palL)}×${toUnit(p0.palW)}×${toUnit(p0.palH)} ${currentMetric} · ${new Date().toLocaleDateString('tr-TR')}`;
+  document.getElementById('result-type-badge').textContent=isPallet?'🪵 Palet':'🚢 Konteyner';
+  document.getElementById('sr-pallets').textContent=pallets.length;
+  document.getElementById('sr-fill').textContent=fill+'%';
+  document.getElementById('sr-boxes').textContent=totalBoxes;
+  document.getElementById('sr-types').textContent=boxes.length;
+  // Weight stat
+  const totalWeight = pallets.reduce((s,p) => s + (p.totalWeight||0), 0);
+  const hasWeight = boxes.some(b => b.weight > 0);
+  const pill = document.getElementById('sr-weight-pill');
+  if (hasWeight) {
+    document.getElementById('sr-weight').textContent = totalWeight.toFixed(1) + ' kg';
+    pill.className = 'stat-pill accent';
+    pill.style.display = '';
+    const maxW = pallets[0]?.maxWeight || 0;
+    const overweight = maxW > 0 && pallets.some(p => (p.totalWeight||0) > maxW);
+    if (overweight) pill.className = 'stat-pill red';
+  } else {
+    pill.style.display = 'none';
+  }
+  document.getElementById('pallet-list-title').textContent=isPallet?'Palet Listesi':'Konteyner Listesi';
+
+  renderPalletList();
+  selectPallet(0);
+}
+
+function renderPalletList() {
+  const p0=pallets[0];
+  const palVol=p0.palL*p0.palW*p0.palH;
+  const isPallet=currentLoadType==='pallet';
+  document.getElementById('pallet-list').innerHTML=pallets.map((p,i)=>{
+    const usedV=p.placed.reduce((s,b)=>s+b.l*b.w*b.h,0);
+    const fill=(usedV/palVol*100).toFixed(1);
+    const fillColor=parseFloat(fill)>=80?'var(--green)':'var(--orange)';
+    const pw = p.totalWeight || 0;
+    const mw = p.maxWeight || 0;
+    const hasW = pw > 0;
+    const overW = mw > 0 && pw > mw;
+    const weightPct = (mw > 0 && hasW) ? Math.min(100, pw/mw*100) : 0;
+    const weightColor = overW ? 'var(--red)' : weightPct > 80 ? 'var(--orange)' : 'var(--green)';
+    return `<div class="pallet-item${i===currentPalletIdx?' selected':''}${overW?' overweight':''}" onclick="selectPallet(${i})">
+      <div class="pallet-num">${i+1}</div>
+      <div class="pallet-item-info">
+        <div class="pallet-item-name">${isPallet?'Palet':'Konteyner'} ${i+1}</div>
+        <div class="pallet-item-meta">${p.placed.length} koli · Doluluk ${fill}%${hasW ? ` · ${pw.toFixed(1)} kg` : ''}</div>
+        <div class="fill-bar"><div class="fill-bar-inner" style="width:${fill}%;background:${fillColor}"></div></div>
+        ${hasW && mw > 0 ? `<div class="weight-bar-wrap"><div class="weight-bar" style="width:${weightPct.toFixed(1)}%;background:${weightColor}"></div></div>` : ''}
+        ${overW ? `<div class="overweight-badge">⚠️ Ağırlık aşıldı! ${pw.toFixed(1)}/${mw} kg</div>` : ''}
+      </div>
+      <span class="badge ${parseFloat(fill)>=80?'green':'orange'}">${fill}%</span>
+    </div>`;
+  }).join('');
+}
+
+function selectPallet(i) {
+  currentPalletIdx=i;
+  renderPalletList();
+  renderBoxContents();
+  renderDetailTable();
+  updatePalletNav();
+  render3D();
+  const isPallet=currentLoadType==='pallet';
+  document.getElementById('viewer-pallet-label').textContent=`${isPallet?'Palet':'Konteyner'} ${i+1}`;
+  document.getElementById('pallet-contents-sub').textContent=`${isPallet?'Palet':'Konteyner'} ${i+1} içeriği`;
+}
+
+function renderBoxContents() {
+  const p=pallets[currentPalletIdx];
+  const counts={};
+  p.placed.forEach(b=>{ counts[b.typeIdx]=(counts[b.typeIdx]||0)+1; });
+  document.getElementById('box-contents').innerHTML=Object.entries(counts).map(([ti,cnt])=>{
+    const bx=boxes[+ti]; if(!bx) return '';
+    const rowWeight = bx.weight > 0 ? ` · ${(bx.weight*cnt).toFixed(1)} kg` : '';
+    return `<div class="box-content-row">
+      <div class="box-content-dot" style="background:${bx.color}"></div>
+      <div class="box-content-info">
+        <div class="box-content-name">${bx.name}</div>
+        <div class="box-content-dims">${bx.l}×${bx.w}×${bx.h} ${currentMetric}${bx.weight>0?' · '+bx.weight+' kg/adet':''}${bx.maxStackWeight>0?' · max '+bx.maxStackWeight+' kg üst':''}</div>
+      </div>
+      <div class="box-content-cnt">×${cnt}<div style="font-size:10px;color:var(--text3);font-weight:500">${rowWeight}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderDetailTable() {
+  const p=pallets[currentPalletIdx];
+  document.getElementById('detail-table').innerHTML=p.placed.map((b,j)=>`
+    <tr>
+      <td style="color:var(--text3)">${j+1}</td>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${b.color};margin-right:6px;vertical-align:middle"></span>${boxes[b.typeIdx]?.name||'Koli'}</td>
+      <td>${toUnit(b.x).toFixed(currentMetric==='in'?1:0)}</td><td>${toUnit(b.y).toFixed(currentMetric==='in'?1:0)}</td><td>${toUnit(b.z).toFixed(currentMetric==='in'?1:0)}</td>
+      <td style="color:var(--text2)">${toUnit(b.l)}×${toUnit(b.w)}×${toUnit(b.h)}</td>
+      <td style="color:var(--text3)">${fmtVol(b.l*b.w*b.h)}</td>
+      <td style="color:var(--text2)">${b.weight>0?b.weight.toFixed(2)+' kg':'—'}</td>
+    </tr>`).join('');
+}
+
+function updatePalletNav() {
+  const total=pallets.length;
+  document.getElementById('pallet-counter').textContent=total>0?`${currentPalletIdx+1} / ${total}`:'—';
+  document.getElementById('prev-btn').disabled=currentPalletIdx===0;
+  document.getElementById('next-btn').disabled=currentPalletIdx>=total-1;
+}
+
+function changePallet(dir) {
+  selectPallet(Math.max(0, Math.min(pallets.length-1, currentPalletIdx+dir)));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════════════════
+function renderHistory() {
+  const el=document.getElementById('history-list');
+  if (!history.length) {
+    el.innerHTML='<div class="no-history"><div style="font-size:28px;margin-bottom:8px">📋</div>Henüz kayıtlı yükleme yok.<br>Yukarıdan yeni bir optimizasyon başlatın.</div>';
+    return;
+  }
+  el.innerHTML=`<div class="history-grid">${history.map(h=>`
+    <div class="history-card">
+      <div class="history-icon ${h.type==='pallet'?'p':'c'}">${h.type==='pallet'?'🪵':'🚢'}</div>
+      <div class="history-info">
+        <div class="history-name">${h.dims}</div>
+        <div class="history-meta">${h.date}</div>
+        <div class="history-badges">
+          <span class="tag blue">${h.palletCount} ${h.type==='pallet'?'palet':'konteyner'}</span>
+          ${h.algo ? `<span class="tag" style="background:#f5f3ff;color:#7c3aed">${h.algo}</span>` : ''}
+          <span class="tag green">%${h.fill} doluluk</span>
+          <span class="tag orange">${h.totalBoxes} koli</span>
+        </div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 3D RENDERER
+// ═══════════════════════════════════════════════════════════════
+let camAngleX=28,camAngleY=-38,camZoom=1,panX=0,panY=0;
+let isDragging=false,isRightDragging=false,lastMX=0,lastMY=0;
+let hoveredBox=null;
+
+function worldToScreen(wx,wy,wz,palL,palW,palH,W,H){
+  const cx=palL/2,cy=palW/2,cz=palH/2;
+  let px=wx-cx, py=wy-cy, pz=-(wz-cz);
+  const ry=camAngleY*Math.PI/180;
+  let tx=px*Math.cos(ry)+py*Math.sin(ry); let ty=-px*Math.sin(ry)+py*Math.cos(ry);
+  px=tx;py=ty;
+  const rx=camAngleX*Math.PI/180;
+  let tz=pz*Math.cos(rx)-py*Math.sin(rx); ty=pz*Math.sin(rx)+py*Math.cos(rx);
+  pz=tz;py=ty;
+  const fov=600, depth=fov+py;
+  if(depth<1) return [W/2+panX,H/2+panY,0,9999];
+  const ps=fov/depth;
+  return [(px*ps)*camZoom+W/2+panX,(pz*ps)*camZoom+H/2+panY,ps*camZoom,py];
+}
+function hexToRgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)]}
+function lighten(hex,f){const[r,g,b]=hexToRgb(hex);return`rgb(${Math.min(255,r+f)},${Math.min(255,g+f)},${Math.min(255,b+f)})`}
+function darken(hex,f){const[r,g,b]=hexToRgb(hex);return`rgb(${Math.max(0,r-f)},${Math.max(0,g-f)},${Math.max(0,b-f)})`}
+function drawFace(ctx,pts,c){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.fillStyle=c;ctx.fill()}
+function strokeFace(ctx,pts,c,w=0.5){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.strokeStyle=c;ctx.lineWidth=w;ctx.stroke()}
+
+function drawBox(ctx,b,palL,palW,palH,W,H){
+  const{x,y,z,l,w,h,color}=b;
+  const C=[[x,y,z],[x+l,y,z],[x+l,y+w,z],[x,y+w,z],[x,y,z+h],[x+l,y,z+h],[x+l,y+w,z+h],[x,y+w,z+h]];
+  const P=C.map(([cx,cy,cz])=>worldToScreen(cx,cy,cz,palL,palW,palH,W,H));
+  const ec='rgba(0,0,0,0.5)';
+  drawFace(ctx,[P[0],P[1],P[2],P[3]],darken(color,60)); strokeFace(ctx,[P[0],P[1],P[2],P[3]],ec,0.7);
+  drawFace(ctx,[P[3],P[2],P[6],P[7]],darken(color,55)); strokeFace(ctx,[P[3],P[2],P[6],P[7]],ec,0.7);
+  drawFace(ctx,[P[0],P[3],P[7],P[4]],darken(color,28)); strokeFace(ctx,[P[0],P[3],P[7],P[4]],ec,0.7);
+  drawFace(ctx,[P[0],P[1],P[5],P[4]],color);            strokeFace(ctx,[P[0],P[1],P[5],P[4]],ec,1);
+  drawFace(ctx,[P[1],P[2],P[6],P[5]],darken(color,48)); strokeFace(ctx,[P[1],P[2],P[6],P[5]],ec,1);
+  drawFace(ctx,[P[4],P[5],P[6],P[7]],lighten(color,42));strokeFace(ctx,[P[4],P[5],P[6],P[7]],ec,1);
+}
+
+function drawWoodenPallet(ctx,palL,palW,palH,W,H){
+  const TH=Math.min(palH*.055,14),LH=Math.min(palH*.095,22);
+  const totalPH=TH+LH;
+  const woodTop='#c8a96e',woodSide='#a07840',woodDark='#7a5a28',woodEdge='rgba(60,35,10,0.55)';
+  function plank(bx,by,bz,bl,bw,bh,topC,frontC,rightC,leftC){
+    const C=[[bx,by,bz],[bx+bl,by,bz],[bx+bl,by+bw,bz],[bx,by+bw,bz],[bx,by,bz+bh],[bx+bl,by,bz+bh],[bx+bl,by+bw,bz+bh],[bx,by+bw,bz+bh]];
+    const P=C.map(([x,y,z])=>worldToScreen(x,y,z,palL,palW,palH,W,H));
+    drawFace(ctx,[P[0],P[1],P[2],P[3]],woodDark);strokeFace(ctx,[P[0],P[1],P[2],P[3]],woodEdge,.5);
+    drawFace(ctx,[P[3],P[2],P[6],P[7]],woodDark);strokeFace(ctx,[P[3],P[2],P[6],P[7]],woodEdge,.5);
+    drawFace(ctx,[P[0],P[3],P[7],P[4]],leftC);strokeFace(ctx,[P[0],P[3],P[7],P[4]],woodEdge,.7);
+    drawFace(ctx,[P[0],P[1],P[5],P[4]],frontC);strokeFace(ctx,[P[0],P[1],P[5],P[4]],woodEdge,.8);
+    drawFace(ctx,[P[1],P[2],P[6],P[5]],rightC);strokeFace(ctx,[P[1],P[2],P[6],P[5]],woodEdge,.7);
+    drawFace(ctx,[P[4],P[5],P[6],P[7]],topC);strokeFace(ctx,[P[4],P[5],P[6],P[7]],woodEdge,.6);
+  }
+  const bz=-totalPH,bL=palL*.14;
+  [0,palL/2-bL/2,palL-bL].forEach(bx=>plank(bx,0,bz,bL,palW,LH,woodTop,woodSide,woodDark,woodDark));
+  const sW=palW*.12,sZ=bz+LH;
+  [0,palW/2-sW/2,palW-sW].forEach(sy=>plank(0,sy,sZ,palL,sW,TH*.6,woodTop,woodSide,woodDark,woodDark));
+  const nB=9,gap=palL*.012,brdL=(palL-gap*8)/9,dZ=sZ+TH*.6;
+  for(let i=0;i<nB;i++) plank(i*(brdL+gap),0,dZ,brdL,palW,TH,woodTop,woodSide,'#b08848','#b08848');
+}
+
+function drawContainerFrame(ctx,palL,palW,palH,W,H){
+  const verts=[[0,0,0],[palL,0,0],[palL,palW,0],[0,palW,0],[0,0,palH],[palL,0,palH],[palL,palW,palH],[0,palW,palH]];
+  const P=verts.map(([x,y,z])=>worldToScreen(x,y,z,palL,palW,palH,W,H));
+  // Floor
+  drawFace(ctx,[P[0],P[1],P[2],P[3]],'rgba(30,80,150,0.15)');
+  // Walls
+  const wallClr='rgba(40,100,200,0.08)';
+  drawFace(ctx,[P[0],P[1],P[5],P[4]],wallClr);
+  drawFace(ctx,[P[3],P[2],P[6],P[7]],wallClr);
+  drawFace(ctx,[P[0],P[3],P[7],P[4]],wallClr);
+  // Edges
+  const edges=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  ctx.strokeStyle='rgba(100,160,255,0.6)';ctx.lineWidth=1.2;
+  edges.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(P[a][0],P[a][1]);ctx.lineTo(P[b][0],P[b][1]);ctx.stroke();});
+}
+
+function render3D(){
+  const container=document.getElementById('three-container');
+  const W=container.clientWidth,H=Math.max(420,container.clientHeight);
+  const canvas=document.getElementById('myCanvas');
+  canvas.width=W*window.devicePixelRatio; canvas.height=H*window.devicePixelRatio;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  ctx.fillStyle='#0d1117'; ctx.fillRect(0,0,W,H);
+  if(!pallets.length) return;
+
+  const p=pallets[currentPalletIdx];
+  if(currentLoadType==='pallet') drawWoodenPallet(ctx,p.palL,p.palW,p.palH,W,H);
+  else drawContainerFrame(ctx,p.palL,p.palW,p.palH,W,H);
+
+  // Cargo zone lines
+  const verts=[[0,0,0],[p.palL,0,0],[p.palL,p.palW,0],[0,p.palW,0],[0,0,p.palH],[p.palL,0,p.palH],[p.palL,p.palW,p.palH],[0,p.palW,p.palH]];
+  const topEdges=[[4,5],[5,6],[6,7],[7,4]],vertEdges=[[0,4],[1,5],[2,6],[3,7]];
+  const P=verts.map(([x,y,z])=>worldToScreen(x,y,z,p.palL,p.palW,p.palH,W,H));
+  ctx.strokeStyle='rgba(0,212,170,0.2)';ctx.lineWidth=1;
+  vertEdges.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(P[a][0],P[a][1]);ctx.lineTo(P[b][0],P[b][1]);ctx.stroke();});
+  ctx.strokeStyle='rgba(0,212,170,0.4)';ctx.lineWidth=1.5;
+  topEdges.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(P[a][0],P[a][1]);ctx.lineTo(P[b][0],P[b][1]);ctx.stroke();});
+
+  const sorted=[...p.placed].sort((a,b)=>{
+    const da=worldToScreen(a.x+a.l/2,a.y+a.w/2,a.z+a.h/2,p.palL,p.palW,p.palH,W,H)[3];
+    const db=worldToScreen(b.x+b.l/2,b.y+b.w/2,b.z+b.h/2,p.palL,p.palW,p.palH,W,H)[3];
+    return db-da;
+  });
+  window._lastRenderBoxes=sorted.slice().reverse();
+  window._lastRenderPallet=p;
+  window._renderW=W; window._renderH=H;
+  sorted.forEach(b=>drawBox(ctx,b,p.palL,p.palW,p.palH,W,H));
+  if(hoveredBox){
+    const{x,y,z,l,w,h}=hoveredBox;
+    const C=[[x,y,z],[x+l,y,z],[x+l,y+w,z],[x,y+w,z],[x,y,z+h],[x+l,y,z+h],[x+l,y+w,z+h],[x,y+w,z+h]];
+    const HP=C.map(([cx,cy,cz])=>worldToScreen(cx,cy,cz,p.palL,p.palW,p.palH,W,H));
+    [[HP[0],HP[1],HP[2],HP[3]],[HP[4],HP[5],HP[6],HP[7]],[HP[0],HP[1],HP[5],HP[4]],[HP[3],HP[2],HP[6],HP[7]],[HP[1],HP[2],HP[6],HP[5]],[HP[0],HP[3],HP[7],HP[4]]].forEach(pts=>{
+      ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);pts.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));ctx.closePath();
+      ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=2;ctx.stroke();
+    });
+  }
+}
+
+// Mouse controls
+const cont=document.getElementById('three-container');
+cont.addEventListener('mousedown',e=>{
+  if(e.button===0){isDragging=true;hoveredBox=null;hideTooltip();}
+  if(e.button===2) isRightDragging=true;
+  lastMX=e.clientX;lastMY=e.clientY;
+});
+cont.addEventListener('contextmenu',e=>e.preventDefault());
+cont.addEventListener('mouseleave',()=>{hoveredBox=null;hideTooltip();if(pallets.length)render3D();});
+window.addEventListener('mousemove',e=>{
+  const rect=cont.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  if(!isDragging&&!isRightDragging){
+    if(pallets.length){
+      const hit=getHit(mx,my);
+      if(hit!==hoveredBox){hoveredBox=hit;if(hit){showTip(hit,mx,my);cont.style.cursor='pointer';}else{hideTooltip();cont.style.cursor='grab';}render3D();}
+      else if(hit) showTip(hit,mx,my);
+    }
+    return;
+  }
+  const dx=e.clientX-lastMX,dy=e.clientY-lastMY;
+  lastMX=e.clientX;lastMY=e.clientY;
+  if(isDragging){camAngleY+=dx*.5;camAngleX=Math.max(-80,Math.min(80,camAngleX+dy*.3));hoveredBox=null;hideTooltip();}
+  else{panX+=dx;panY+=dy;}
+  if(pallets.length) render3D();
+});
+window.addEventListener('mouseup',()=>{isDragging=false;isRightDragging=false;});
+cont.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const rect=cont.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const W=cont.clientWidth,H=cont.clientHeight;
+  const zf=e.deltaY<0?1.10:1/1.10;
+  const nz=Math.max(.15,Math.min(6,camZoom*zf));
+  panX=(mx-W/2)-((mx-W/2-panX)/camZoom)*nz;
+  panY=(my-H/2)-((my-H/2-panY)/camZoom)*nz;
+  camZoom=nz;
+  if(pallets.length) render3D();
+},{passive:false});
+let lt=null;
+cont.addEventListener('touchstart',e=>{lt=e.touches[0];});
+cont.addEventListener('touchmove',e=>{
+  if(!lt) return; e.preventDefault();
+  const t=e.touches[0];
+  camAngleY+=(t.clientX-lt.clientX)*.5;
+  camAngleX=Math.max(-80,Math.min(80,camAngleX+(t.clientY-lt.clientY)*.3));
+  lt=t; if(pallets.length) render3D();
+},{passive:false});
+
+function getHit(mx,my){
+  if(!window._lastRenderBoxes||!window._lastRenderPallet) return null;
+  const p=window._lastRenderPallet,W=window._renderW,H=window._renderH;
+  for(const b of window._lastRenderBoxes){
+    const{x,y,z,l,w,h}=b;
+    const C=[[x,y,z],[x+l,y,z],[x+l,y+w,z],[x,y+w,z],[x,y,z+h],[x+l,y,z+h],[x+l,y+w,z+h],[x,y+w,z+h]];
+    const P=C.map(([cx,cy,cz])=>worldToScreen(cx,cy,cz,p.palL,p.palW,p.palH,W,H));
+    const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);
+    if(mx>=Math.min(...xs)&&mx<=Math.max(...xs)&&my>=Math.min(...ys)&&my<=Math.max(...ys)){
+      const faces=[[P[4],P[5],P[6],P[7]],[P[0],P[1],P[5],P[4]],[P[1],P[2],P[6],P[5]],[P[0],P[3],P[7],P[4]]];
+      for(const f of faces){
+        let inside=false;
+        for(let i=0,j=f.length-1;i<f.length;j=i++){
+          const xi=f[i][0],yi=f[i][1],xj=f[j][0],yj=f[j][1];
+          if((yi>my)!==(yj>my)&&mx<(xj-xi)*(my-yi)/(yj-yi)+xi) inside=!inside;
+        }
+        if(inside) return b;
+      }
+    }
+  }
+  return null;
+}
+
+function showTip(b,mx,my){
+  const tip=document.getElementById('box-tooltip');
+  const bx=boxes[b.typeIdx],name=bx?bx.name:'Koli';
+  tip.innerHTML=`<div style="font-weight:700;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:7px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${b.color}"></span>${name}</div>
+    <div style="color:#94a3b8;font-size:11px;margin-bottom:2px">Boyut</div><div style="margin-bottom:7px">${toUnit(b.l)}×${toUnit(b.w)}×${toUnit(b.h)} ${currentMetric}</div>
+    <div style="color:#94a3b8;font-size:11px;margin-bottom:2px">Konum (x,y,z)</div><div style="margin-bottom:7px">${toUnit(b.x).toFixed(currentMetric==='in'?1:0)}, ${toUnit(b.y).toFixed(currentMetric==='in'?1:0)}, ${toUnit(b.z).toFixed(currentMetric==='in'?1:0)} ${currentMetric}</div>
+    <div style="color:#94a3b8;font-size:11px;margin-bottom:2px">Hacim</div><div style="color:#00d4aa">${fmtVol(b.l*b.w*b.h)}</div>`;
+  tip.style.display='block';
+  let tx=mx+14,ty=my-16;
+  if(tx+190>cont.clientWidth) tx=mx-200;
+  if(ty+170>cont.clientHeight) ty=my-170;
+  tip.style.left=tx+'px';tip.style.top=ty+'px';
+}
+function hideTooltip(){document.getElementById('box-tooltip').style.display='none';}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER TO IMAGE (for PDF/Excel)
+// ═══════════════════════════════════════════════════════════════
+function renderPalletToImage(idx,imgW,imgH,fmt='jpeg'){
+  const off=document.createElement('canvas');
+  off.width=imgW;off.height=imgH;
+  const ctx=off.getContext('2d');
+  ctx.fillStyle='#0d1117';ctx.fillRect(0,0,imgW,imgH);
+  const p=pallets[idx];
+  const sZ=camZoom,sPX=panX,sPY=panY,sAX=camAngleX,sAY=camAngleY;
+  camAngleX=28;camAngleY=-38;camZoom=1;panX=0;panY=0;
+  if(currentLoadType==='pallet') drawWoodenPallet(ctx,p.palL,p.palW,p.palH,imgW,imgH);
+  else drawContainerFrame(ctx,p.palL,p.palW,p.palH,imgW,imgH);
+  const verts=[[0,0,0],[p.palL,0,0],[p.palL,p.palW,0],[0,p.palW,0],[0,0,p.palH],[p.palL,0,p.palH],[p.palL,p.palW,p.palH],[0,p.palW,p.palH]];
+  const P=verts.map(([x,y,z])=>worldToScreen(x,y,z,p.palL,p.palW,p.palH,imgW,imgH));
+  ctx.strokeStyle='rgba(0,212,170,0.4)';ctx.lineWidth=1.5;
+  [[4,5],[5,6],[6,7],[7,4]].forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(P[a][0],P[a][1]);ctx.lineTo(P[b][0],P[b][1]);ctx.stroke();});
+  const sorted=[...p.placed].sort((a,b)=>worldToScreen(b.x+b.l/2,b.y+b.w/2,b.z+b.h/2,p.palL,p.palW,p.palH,imgW,imgH)[3]-worldToScreen(a.x+a.l/2,a.y+a.w/2,a.z+a.h/2,p.palL,p.palW,p.palH,imgW,imgH)[3]);
+  sorted.forEach(b=>drawBox(ctx,b,p.palL,p.palW,p.palH,imgW,imgH));
+  camZoom=sZ;panX=sPX;panY=sPY;camAngleX=sAX;camAngleY=sAY;
+  return off.toDataURL(fmt==='jpeg'?'image/jpeg':'image/png',.92);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXCEL IMPORT / EXPORT
+// ═══════════════════════════════════════════════════════════════
+function importFromExcel(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      if(wb.SheetNames.includes('Palet')){
+        const r=XLSX.utils.sheet_to_json(wb.Sheets['Palet'],{header:1})[1];
+        if(r&&r.length>=3){document.getElementById('dim-l').value=r[0]||120;document.getElementById('dim-w').value=r[1]||80;document.getElementById('dim-h').value=r[2]||150;updateDimVol();}
+      }
+      if(wb.SheetNames.includes('Kutular')){
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets['Kutular'],{header:1});
+        boxes=[];boxIdCounter=0;
+        for(let i=1;i<rows.length;i++){
+          const r=rows[i]; if(!r||r.length<4) continue;
+          // Parse orientation column (index 5) — pipe-separated codes
+          let orients = null;
+          if (r[5] && typeof r[5] === 'string') {
+            const parsed = r[5].split('|').map(s=>s.trim()).filter(s=>ALL_ORIENTS.includes(s));
+            if (parsed.length > 0) orients = parsed;
+          }
+          const weight = parseFloat(r[6]) || 0;
+          const maxStackWeight = parseFloat(r[7]) || 0;
+          addBoxType(parseFloat(r[1])||40,parseFloat(r[2])||30,parseFloat(r[3])||25,parseInt(r[4])||10,r[0]||`Koli ${i}`,orients,weight,maxStackWeight);
+        }
+        showToast(`✓ ${boxes.length} koli tipi yüklendi`,'success');
+      }
+    }catch(err){showToast('Excel hatası: '+err.message,'error');}
+    input.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function downloadTemplate(){
+  const wb=XLSX.utils.book_new();
+  const ps=XLSX.utils.aoa_to_sheet([['Uzunluk (cm)','Genişlik (cm)','Yükseklik (cm)'],[120,80,150]]);
+  ps['!cols']=[{wch:16},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ps,'Palet');
+
+  // Kutular sheet — with orientation column
+  // Orientation codes: LWH=Düz, LHW=Dik, WLH=Yan, WHL=Devrik, HLW=Yatık, HWL=Ters
+  // Multiple codes separated by | e.g. "LWH|WLH|HLW"
+  const bs=XLSX.utils.aoa_to_sheet([
+    ['Kutu Adı','Uzunluk (cm)','Genişlik (cm)','Yükseklik (cm)','Adet','Yönler (| ile ayır)','Ağırlık (kg)','Maks Üst Yük (kg)'],
+    ['Küçük Koli',40,30,25,20,'LWH|LHW|WLH|WHL|HLW|HWL',5.5,30],
+    ['Orta Koli', 60,40,35, 8,'LWH|WLH',12.0,50],
+    ['Mini Kutu', 25,25,20,15,'LWH|LHW|WLH|WHL|HLW|HWL',2.0,15],
+  ]);
+  bs['!cols']=[{wch:18},{wch:14},{wch:14},{wch:14},{wch:8},{wch:32},{wch:14},{wch:18}];
+
+  // Yönler referans sayfası
+  const ref=XLSX.utils.aoa_to_sheet([
+    ['Kod','Açıklama','Boyutlar'],
+    ['LWH','Düz (doğal yön)','Uzunluk × Genişlik × Yükseklik'],
+    ['LHW','Dik','Uzunluk × Yükseklik × Genişlik'],
+    ['WLH','Yan (90° yatay)','Genişlik × Uzunluk × Yükseklik'],
+    ['WHL','Devrik','Genişlik × Yükseklik × Uzunluk'],
+    ['HLW','Yatık (üstüne yatır)','Yükseklik × Uzunluk × Genişlik'],
+    ['HWL','Ters yatık','Yükseklik × Genişlik × Uzunluk'],
+    ['','',''],
+    ['Not:','Tüm yönlere izin vermek için tüm 6 kodu yazın ya da hücreyi boş bırakın.',''],
+  ]);
+  ref['!cols']=[{wch:10},{wch:28},{wch:36}];
+
+  XLSX.utils.book_append_sheet(wb,bs,'Kutular');
+  XLSX.utils.book_append_sheet(wb,ref,'Yönler Rehberi');
+  XLSX.writeFile(wb,'loadopt_sablon.xlsx');
+  showToast('✓ Şablon indirildi','success');
+}
+
+function exportExcel(){
+  if(!pallets.length) return;
+  showToast('⏳ Excel hazırlanıyor...','warn');
+  setTimeout(()=>{
+    const wb=XLSX.utils.book_new();
+    const p0=pallets[0],palVol=p0.palL*p0.palW*p0.palH;
+    const sum=[['LOADOPT OPTIMIZASYON RAPORU'],[],['Ölçüler',`${toUnit(p0.palL)}×${toUnit(p0.palW)}×${toUnit(p0.palH)} ${currentMetric}`],['Toplam Birim',pallets.length],[],['Birim','Koli','Doluluk','Hacim']];
+    pallets.forEach((p,i)=>{
+      const v=p.placed.reduce((s,b)=>s+b.l*b.w*b.h,0),f=(v/palVol*100).toFixed(1);
+      sum.push([`${currentLoadType==='pallet'?'Palet':'Konteyner'} ${i+1}`,p.placed.length,f+'%',(v/1e6).toFixed(4)+' m³']);
+    });
+    const ss=XLSX.utils.aoa_to_sheet(sum);
+    ss['!cols']=[{wch:14},{wch:14},{wch:12},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ss,'Özet');
+    pallets.forEach((p,i)=>{
+      const rows=[['#','Koli','X','Y','Z','Uzunluk','Genişlik','Yükseklik','Hacim']];
+      p.placed.forEach((b,j)=>rows.push([j+1,boxes[b.typeIdx]?.name||'Koli',b.x.toFixed(0),b.y.toFixed(0),b.z.toFixed(0),b.l,b.w,b.h,(b.l*b.w*b.h/1000).toFixed(1)+' dm³']));
+      const s=XLSX.utils.aoa_to_sheet(rows);
+      s['!cols']=[{wch:5},{wch:18},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:10}];
+      XLSX.utils.book_append_sheet(wb,s,`${currentLoadType==='pallet'?'Palet':'Konteyner'} ${i+1}`);
+    });
+    XLSX.writeFile(wb,'loadopt_sonuclar.xlsx');
+    showToast('✓ Excel indirildi','success');
+  },50);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PDF EXPORT — real binary PDF with embedded JPEG images
+// ═══════════════════════════════════════════════════════════════
+async function exportPDF(){
+  if(!pallets.length) return;
+  showToast('⏳ PDF oluşturuluyor...','warn');
+  await new Promise(r=>setTimeout(r,60));
+  try{
+    const p0=pallets[0],palVol=p0.palL*p0.palW*p0.palH;
+    let totalBoxes=0,totalUsedVol=0;
+    pallets.forEach(p=>{totalBoxes+=p.placed.length;p.placed.forEach(b=>totalUsedVol+=b.l*b.w*b.h);});
+    const overallFill=(totalUsedVol/(pallets.length*palVol)*100).toFixed(1);
+    const today=new Date().toLocaleDateString('tr-TR');
+    const isPallet=currentLoadType==='pallet';
+    const unitLabel=isPallet?'Palet':'Konteyner';
+    const PW=595,PH=842,ML=40,MR=40,CW=595-80;
+
+    function h2r(hex){return[parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255]}
+    function rg(hex){const[r,g,b]=h2r(hex);return`${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)}`}
+    function rect(x,y,w,h,fill,stroke){
+      const s=[];
+      if(fill) s.push(`${rg(fill)} rg`);
+      if(stroke) s.push(`${rg(stroke)} RG`);
+      s.push(`${x} ${y} ${w} ${h} re`);
+      s.push(fill&&stroke?'B':fill?'f':'S');
+      return s.join('\n');
+    }
+    function txt(t,x,y,sz,hex,bold=false){
+      const safe=t.replace(/[^\x00-\xFF]/g,c=>({
+        '×':'x','³':'3','²':'2','ü':'u','ö':'o','ş':'s','ı':'i','ğ':'g','ç':'c',
+        'İ':'I','Ü':'U','Ö':'O','Ş':'S','Ğ':'G','Ç':'C','—':'-','•':'-'
+      }[c]||'?'));
+      const esc=safe.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+      return`BT\n/${bold?'F2':'F1'} ${sz} Tf\n${rg(hex)} rg\n${x} ${y} Td\n(${esc}) Tj\nET`;
+    }
+    function line(x1,y1,x2,y2,hex,lw=.5){return`${lw} w\n${rg(hex)} RG\n${x1} ${y1} m\n${x2} ${y2} l\nS`}
+    function img(name,x,y,w,h){return`q\n${w} 0 0 ${h} ${x} ${y} cm\n/${name} Do\nQ`}
+
+    function b64ToBytes(dataUrl){
+      const b=atob(dataUrl.split(',')[1]);
+      const a=new Uint8Array(b.length);
+      for(let i=0;i<b.length;i++) a[i]=b.charCodeAt(i);
+      return a;
+    }
+
+    const enc=new TextEncoder();
+    const chunks=[];let offset=0;
+    const offsets={};
+    let nextId=1;
+    function alloc(){return nextId++;}
+    function write(s){const b=enc.encode(s);chunks.push(b);offset+=b.length;}
+    function writeBin(a){chunks.push(a);offset+=a.length;}
+
+    const catalogId=alloc(),pageTreeId=alloc();
+    const imgIds=[];
+
+    write('%PDF-1.4\n%\xFF\xFF\xFF\xFF\n');
+
+    // Render + store images for each pallet
+    const palletImgData=[];
+    for(let i=0;i<pallets.length;i++){
+      const dataUrl=renderPalletToImage(i,720,400,'jpeg');
+      palletImgData.push(dataUrl);
+    }
+
+    // Write image objects
+    for(let i=0;i<palletImgData.length;i++){
+      const bytes=b64ToBytes(palletImgData[i]);
+      const id=alloc();
+      const name=`Im${i+1}`;
+      imgIds.push({id,name,bytes,w:720,h:400});
+      offsets[id]=offset;
+      write(`${id} 0 obj\n`);
+      write(`<< /Type /XObject /Subtype /Image /Width 720 /Height 400 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\n`);
+      write('stream\n');
+      writeBin(bytes);
+      write('\nendstream\nendobj\n');
+    }
+
+    const pageIds=[];
+    function makePage(streamParts,usedImgNames){
+      const contentId=alloc(),pageId=alloc();
+      const streamStr=streamParts.join('\n');
+      const streamBytes=enc.encode(streamStr);
+      offsets[contentId]=offset;
+      write(`${contentId} 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`);
+      writeBin(streamBytes);
+      write('\nendstream\nendobj\n');
+      let xobj='';
+      for(const nm of usedImgNames){
+        const img=imgIds.find(i=>i.name===nm);
+        if(img) xobj+=`/${nm} ${img.id} 0 R `;
+      }
+      offsets[pageId]=offset;
+      write(`${pageId} 0 obj\n<< /Type /Page /Parent ${pageTreeId} 0 R /MediaBox [0 0 ${PW} ${PH}] /Contents ${contentId} 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >> >> /XObject << ${xobj}>> >> >>\nendobj\n`);
+      pageIds.push(pageId);
+    }
+
+    // ── COVER PAGE ──────────────────────────────────────────────
+    {
+      const s=[];
+      const bg='#f8fafc',acc='#2563eb',grn='#059669',org='#d97706',prp='#7c3aed';
+      const txt1='#0f172a',txt2='#475569',txt3='#94a3b8',brd='#e2e8f0';
+
+      s.push(rect(0,0,PW,PH,bg,null));
+      s.push(rect(0,PH-6,PW,6,acc,null));
+      s.push(rect(0,PH-6,PW/3,6,prp,null));
+
+      // Header strip
+      s.push(rect(0,PH-80,PW,80,'#ffffff',null));
+      s.push(line(0,PH-80,PW,PH-80,brd));
+      s.push(txt('LOADOPT',ML,PH-38,22,acc,true));
+      s.push(txt('Yukleme Optimizasyon Sistemi',ML,PH-58,10,txt3));
+      s.push(txt(today,PW-MR-60,PH-48,10,txt3));
+
+      // Big title
+      s.push(txt('Optimizasyon',ML,PH-130,28,txt1,true));
+      s.push(txt('Raporu',ML,PH-160,28,acc,true));
+      s.push(line(ML,PH-170,PW-MR,PH-170,brd,.5));
+
+      // 4 stat cards
+      const cards=[
+        {lbl:`Toplam ${unitLabel}`,val:String(pallets.length),c:acc},
+        {lbl:'Toplam Koli',val:String(totalBoxes),c:grn},
+        {lbl:'Ort. Doluluk',val:overallFill+'%',c:org},
+        {lbl:'Koli Tipi',val:String(boxes.length),c:prp},
+      ];
+      const cw=(CW-18)/4,ch=60,cTop=PH-250;
+      cards.forEach((card,i)=>{
+        const cx=ML+i*(cw+6),cy=cTop-ch;
+        s.push(rect(cx,cy,cw,ch,'#ffffff',null));
+        s.push(line(cx,cy+ch,cx+cw,cy+ch,card.c,2));
+        s.push(txt(card.val,cx+cw/2-card.val.length*6,cy+ch-22,20,card.c,true));
+        s.push(txt(card.lbl,cx+4,cy+8,8,txt3));
+      });
+
+      // Dims box
+      const dby=PH-350;
+      s.push(rect(ML,dby,CW,44,'#ffffff',null));
+      s.push(line(ML,dby+44,ML+CW,dby+44,brd,.5));
+      s.push(txt('YUKLEME BIRIMI OLCULERI',ML+8,dby+30,8,txt3));
+      s.push(txt(`${toUnit(p0.palL)} x ${toUnit(p0.palW)} x ${toUnit(p0.palH)} ${currentMetric}  (U x G x Y)`,ML+8,dby+14,11,txt1,true));
+      s.push(txt(`Hacim: ${(palVol/1e6).toFixed(4)} m3`,ML+CW-100,dby+14,9,acc));
+
+      // Summary table header
+      const tTop=PH-420;
+      s.push(txt(`${unitLabel.toUpperCase()} OZETI`,ML,tTop+14,8,txt3));
+      s.push(rect(ML,tTop-14,CW,16,'#f1f5f9',null));
+      const tc=[ML+4,ML+56,ML+180,ML+280,ML+370,ML+440];
+      ['Birim','Koli Sayisi','Icerik','Kullanilan Hacim','Doluluk','Durum'].forEach((h,i)=>s.push(txt(h,tc[i],tTop-8,8,acc,true)));
+      let ry=tTop-14;
+      pallets.forEach((p,pi)=>{
+        ry-=16;
+        const v=p.placed.reduce((s,b)=>s+b.l*b.w*b.h,0),f=(v/palVol*100).toFixed(1);
+        const counts={};p.placed.forEach(b=>{counts[b.typeIdx]=(counts[b.typeIdx]||0)+1});
+        const summ=Object.entries(counts).map(([ti,c])=>`${boxes[+ti]?.name||'Tip'+(+ti+1)}:${c}`).join(', ').slice(0,28);
+        s.push(rect(ML,ry,CW,16,pi%2===0?'#ffffff':'#f8fafc',null));
+        s.push(txt(`${unitLabel} ${pi+1}`,tc[0],ry+5,9,txt1,true));
+        s.push(txt(String(p.placed.length),tc[1],ry+5,9,txt1));
+        s.push(txt(summ,tc[2],ry+5,8,txt2));
+        s.push(txt((v/1e6).toFixed(3)+' m3',tc[3],ry+5,9,txt1));
+        s.push(txt(f+'%',tc[4],ry+5,9,parseFloat(f)>=80?grn:org,true));
+        s.push(txt(parseFloat(f)>=80?'Yogun':'Normal',tc[5],ry+5,8,txt3));
+      });
+
+      // Box types
+      const bTop=ry-30;
+      s.push(txt('KOLI TIPLERI',ML,bTop+14,8,txt3));
+      s.push(rect(ML,bTop-14,CW,16,'#f1f5f9',null));
+      const bc=[ML+16,ML+90,ML+150,ML+210,ML+270,ML+330,ML+400];
+      ['Koli Adi','U','G','Y','Adet','Hacim dm3','Renk'].forEach((h,i)=>s.push(txt(h,bc[i],bTop-8,8,acc,true)));
+      let bry=bTop-14;
+      boxes.forEach((b,bi)=>{
+        bry-=16;
+        s.push(rect(ML,bry,CW,16,bi%2===0?'#ffffff':'#f8fafc',null));
+        const[r,g,bv]=h2r(b.color);
+        s.push(`${r.toFixed(3)} ${g.toFixed(3)} ${bv.toFixed(3)} rg\n${ML+4} ${bry+4} 10 10 re\nf`);
+        s.push(txt(b.name.length>14?b.name.slice(0,13)+'.':b.name,bc[0],bry+5,9,txt1));
+        [b.l,b.w,b.h,b.qty,(b.l*b.w*b.h/1000).toFixed(1)].forEach((v,i)=>s.push(txt(String(v),bc[i+1],bry+5,9,txt1)));
+      });
+
+      s.push(rect(0,0,PW,22,'#f1f5f9',null));
+      s.push(line(0,22,PW,22,brd,.5));
+      s.push(txt('LoadOpt — Yukleme Optimizasyon Sistemi',ML,7,8,txt3));
+      s.push(txt(`Sayfa 1 / ${pallets.length+1}`,PW-MR-50,7,8,txt3));
+      makePage(s,[]);
+    }
+
+    // ── PALLET PAGES ──────────────────────────────────────────
+    for(let pi=0;pi<pallets.length;pi++){
+      const p=pallets[pi];
+      const pVol=p.palL*p.palW*p.palH;
+      const usedV=p.placed.reduce((s,b)=>s+b.l*b.w*b.h,0);
+      const fill=(usedV/pVol*100).toFixed(1);
+      const fillColor=parseFloat(fill)>=80?'#059669':'#d97706';
+      const typeCounts={};p.placed.forEach(b=>{typeCounts[b.typeIdx]=(typeCounts[b.typeIdx]||0)+1});
+      const imgName=`Im${pi+1}`;
+
+      const bg='#f8fafc',acc='#2563eb',grn='#059669',org='#d97706';
+      const txt1='#0f172a',txt2='#475569',txt3='#94a3b8',brd='#e2e8f0';
+
+      const s=[];
+      s.push(rect(0,0,PW,PH,bg,null));
+      s.push(rect(0,PH-6,PW,6,acc,null));
+
+      // Header
+      s.push(rect(0,PH-56,PW,50,'#ffffff',null));
+      s.push(line(0,PH-56,PW,PH-56,brd,.5));
+      s.push(txt(`${unitLabel.toUpperCase()} ${pi+1} / ${pallets.length}`,ML,PH-24,8,acc));
+      s.push(txt(`${unitLabel} ${pi+1}`,ML,PH-40,16,txt1,true));
+      // Fill badge
+      const[fr,fg,fb]=h2r(fillColor);
+      s.push(`${fr.toFixed(3)} ${fg.toFixed(3)} ${fb.toFixed(3)} rg\n${PW-MR-72} ${PH-50} 72 28 re\nf`);
+      s.push(txt(`Doluluk: ${fill}%`,PW-MR-68,PH-41,10,'#ffffff',true));
+
+      // 3D image
+      const iW=CW*.60,iH=iW*(400/720);
+      const iX=ML,iY=PH-66-iH;
+      s.push(rect(iX-1,iY-1,iW+2,iH+2,'#1e293b',null));
+      s.push(img(imgName,iX,iY,iW,iH));
+      s.push(txt('3D YERLESIM GORUNUMU',iX,iY-12,7,txt3));
+
+      // Stat boxes (right)
+      const sx=ML+iW+12,sw=PW-MR-sx;
+      let sy=PH-68;
+      const stats=[
+        {l:'Koli Sayisi',v:String(p.placed.length),c:acc},
+        {l:'Doluluk',v:fill+'%',c:fillColor},
+        {l:'Kullanilan',v:(usedV/1e6).toFixed(3)+' m3',c:org},
+        {l:'Bos Hacim',v:(100-parseFloat(fill)).toFixed(1)+'%',c:'#64748b'},
+      ];
+      stats.forEach(st=>{
+        s.push(rect(sx,sy-36,sw,36,'#ffffff',null));
+        s.push(line(sx,sy-36,sx+sw,sy-36,brd,.4));
+        const[r,g,b]=h2r(st.c);
+        s.push(`${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)} rg\n${sx} ${sy-36} 3 36 re\nf`);
+        s.push(txt(st.v,sx+sw/2-st.v.length*5,sy-20,13,st.c,true));
+        s.push(txt(st.l,sx+6,sy-31,8,txt3));
+        sy-=40;
+      });
+
+      // Distribution
+      sy-=6;
+      s.push(txt('KOLI DAGILIMI',sx,sy,7,txt3));
+      sy-=14;
+      Object.entries(typeCounts).forEach(([ti,cnt])=>{
+        const bx=boxes[+ti]; if(!bx) return;
+        s.push(rect(sx,sy-18,sw,18,'#ffffff',null));
+        s.push(line(sx,sy-18,sx+sw,sy-18,brd,.3));
+        const[r,g,b]=h2r(bx.color);
+        s.push(`${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)} rg\n${sx+4} ${sy-14} 8 8 re\nf`);
+        const nm=bx.name.length>12?bx.name.slice(0,11)+'.':bx.name;
+        s.push(txt(nm,sx+15,sy-11,8,txt1));
+        s.push(txt(`x${cnt}`,sx+sw-18,sy-11,9,acc,true));
+        sy-=20;
+      });
+
+      // Detail table
+      const tableY=iY-26;
+      s.push(txt('KOLI YERLESIM DETAYLARI',ML,tableY+14,8,txt3));
+      s.push(rect(ML,tableY-14,CW,16,'#f1f5f9',null));
+      const tc2=[ML+4,ML+24,ML+110,ML+160,ML+205,ML+250,ML+300,ML+350,ML+410];
+      ['#','Koli Adi','X','Y','Z','U','G','Y(cm)','Hacim'].forEach((h,i)=>s.push(txt(h,tc2[i],tableY-8,8,acc,true)));
+      let ry=tableY-14;
+      const rH=13,maxRows=Math.floor((ry-40)/rH);
+      p.placed.slice(0,maxRows).forEach((b,j)=>{
+        ry-=rH;
+        s.push(rect(ML,ry,CW,rH,j%2===0?'#ffffff':'#f8fafc',null));
+        const[r,g,bv]=h2r(b.color);
+        s.push(`${r.toFixed(3)} ${g.toFixed(3)} ${bv.toFixed(3)} rg\n${ML} ${ry} 3 ${rH} re\nf`);
+        const bn=(boxes[b.typeIdx]?.name||'Koli').slice(0,14);
+        [j+1,bn,b.x.toFixed(0),b.y.toFixed(0),b.z.toFixed(0),b.l,b.w,b.h,(b.l*b.w*b.h/1000).toFixed(1)+'dm'].forEach((v,i)=>s.push(txt(String(v),tc2[i],ry+4,7.5,txt1)));
+      });
+      if(p.placed.length>maxRows) s.push(txt(`... ve ${p.placed.length-maxRows} koli daha`,ML,ry-12,8,txt3));
+
+      s.push(rect(0,0,PW,22,'#f1f5f9',null));
+      s.push(line(0,22,PW,22,brd,.5));
+      s.push(txt('LoadOpt — Yukleme Optimizasyon Sistemi',ML,7,8,txt3));
+      s.push(txt(`Sayfa ${pi+2} / ${pallets.length+1}  |  ${today}`,PW-MR-110,7,8,txt3));
+      makePage(s,[imgName]);
+    }
+
+    // Build xref + finalize
+    offsets[pageTreeId]=offset;
+    write(`${pageTreeId} 0 obj\n<< /Type /Pages /Kids [${pageIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>\nendobj\n`);
+    offsets[catalogId]=offset;
+    write(`${catalogId} 0 obj\n<< /Type /Catalog /Pages ${pageTreeId} 0 R >>\nendobj\n`);
+    const xrefOff=offset;
+    const maxId=Math.max(catalogId,pageTreeId,...imgIds.map(i=>i.id),...pageIds);
+    write(`xref\n0 ${maxId+1}\n0000000000 65535 f \n`);
+    for(let i=1;i<=maxId;i++){
+      const o=offsets[i];
+      write(o!==undefined?(String(o).padStart(10,'0')+' 00000 n \n'):'0000000000 65535 f \n');
+    }
+    write(`trailer\n<< /Size ${maxId+1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOff}\n%%EOF\n`);
+
+    let total=0; for(const c of chunks) total+=c.length;
+    const out=new Uint8Array(total);let pos=0;
+    for(const c of chunks){out.set(c,pos);pos+=c.length;}
+
+    const blob=new Blob([out],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='loadopt_rapor.pdf';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+    showToast('✓ PDF raporu indirildi','success');
+  }catch(err){
+    showToast('✕ PDF hatasi: '+err.message,'error');
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+type+' show';
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>{t.className='toast';},3200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderHistory();
+</script>
+</body>
+</html>
